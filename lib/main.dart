@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io' show Platform;
-import 'dart:ui';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
@@ -83,6 +82,20 @@ class MyApp extends StatelessWidget {
       home: const MainScreen(),
     );
   }
+}
+
+class _NavItemData {
+  final IconData icon;
+  final IconData selectedIcon;
+  final String label;
+  final String sfSymbol;
+
+  const _NavItemData({
+    required this.icon,
+    required this.selectedIcon,
+    required this.label,
+    required this.sfSymbol,
+  });
 }
 
 class MainScreen extends StatefulWidget {
