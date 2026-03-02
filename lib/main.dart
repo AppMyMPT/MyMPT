@@ -234,7 +234,8 @@ class _MainScreenState extends State<MainScreen> {
         isNumerator ? const Color(0xFFFF8C00) : const Color(0xFF42A5F5);
         
     final bool isIOS = !kIsWeb && Platform.isIOS;
-    final double indicatorBottomOffset = isIOS ? 100 : (80 + 10); // для стандартного навбара Android (высота 80 + отступ 10)
+    // Уменьшаем отступ для iOS (60 вместо 100), чтобы кружочки страниц были ближе к навбару
+    final double indicatorBottomOffset = isIOS ? 60 : (80 + 10); 
 
     Widget? bottomNavigationBar;
     
