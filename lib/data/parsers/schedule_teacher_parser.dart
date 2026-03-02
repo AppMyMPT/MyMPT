@@ -125,10 +125,26 @@ class ScheduleTeacherParser {
   }
 
   bool _isTeacherMatch(String cellText, String lastName, String initials) {
-    if (cellText.contains(lastName)) return true;
+    // 1. Поиск точного совпадения фамилии (с границами)
+    // Используем [^а-яёa-z] чтобы исключить совпадения внутри других слов
+    final nameRegex = RegExp(r'(^|\s|[^а-яёa-z])' + RegExp.escape(lastName) + r'($|\s|[^а-яёa-z])', caseSensitive: false);
+    
+    if (!nameRegex.hasMatch(cellText)) {
+      return false; // Фамилии нет — точно не он
+    }
+
     final cleanInitials = initials.replaceAll(' ', '');
-    if (cleanInitials.isNotEmpty && cellText.replaceAll(' ', '').contains(cleanInitials)) return true;
-    return false;
+    
+    // Если у искомого преподавателя нет инициалов (маловероятно, но бывает), 
+    // считаем, что совпало по фамилии.
+    if (cleanInitials.isEmpty) return true;
+
+    // Если в ячейке вообще нет инициалов (например просто "Иванов" без И.И.),
+    // будем считать совпадением, так как фамилия совпала и нет противоречащих инициалов.
+    if (!cellText.contains('.')) return true;
+
+    // Иначе проверяем, содержатся ли именно нужные инициалы в тексте ячейки.
+    return cellText.replaceAll(' ', '').contains(cleanInitials);
   }
 
   int _pairedLabelsCount(List<Element> subjects, List<Element> teachers) {
