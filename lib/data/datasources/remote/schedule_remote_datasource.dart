@@ -66,6 +66,10 @@ class ScheduleRemoteDatasource {
         result[day] = lessonMaps.map(Lesson.fromJson).toList();
       });
 
+      if (result.isEmpty) {
+        throw Exception('Сайт МПТ вернул пустую страницу или расписание для "$targetName" не найдено. Возможно, включена защита от ботов или ведутся технические работы.');
+      }
+
       return result;
     } catch (error) {
       throw Exception('Error fetching schedule for ${isTeacher ? 'teacher' : 'group'} $targetName: $error');
