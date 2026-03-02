@@ -52,6 +52,15 @@ class FcmFirestoreService {
     _initialized = true;
   }
 
+  /// Получает FCM-токен безопасно, возвращает null при ошибке (например, если нет Google Play)
+  Future<String?> getTokenSafe() async {
+    try {
+      return await _messaging.getToken();
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Синхронизирует текущий FCM-токен и выбранную группу в Firestore.
   /// Вызывать при старте приложения и при смене группы в настройках.
   /// При недоступности FIS (эмулятор, нет сети) токен может быть null — метод завершится без ошибки.
