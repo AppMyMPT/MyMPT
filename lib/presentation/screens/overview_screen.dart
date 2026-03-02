@@ -267,7 +267,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
               ],
             ),
             Positioned(
-              bottom: 100, // Сдвигаем индикатор страниц чуть выше над навбаром
+              bottom: 60, // Сдвигаем индикатор страниц чуть выше над навбаром
               left: 0,
               right: 0,
               child: PageIndicator(currentPageIndex: currentPageIndex),
