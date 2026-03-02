@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io' show Platform;
-import 'dart:ui';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
@@ -72,6 +71,25 @@ class MyApp extends StatelessWidget {
         appBarTheme: const AppBarTheme(
           foregroundColor: Colors.white,
           elevation: 0,
+        ),
+        navigationBarTheme: NavigationBarThemeData(
+          indicatorColor: const Color(0x33FFFFFF),
+          height: 80,
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+          elevation: 0,
+          iconTheme: WidgetStateProperty.resolveWith(
+            (states) => IconThemeData(
+              color: states.contains(WidgetState.selected) ? Colors.white : Colors.white70,
+            ),
+          ),
+          labelTextStyle: WidgetStateProperty.resolveWith(
+            (states) => TextStyle(
+              fontSize: 11,
+              fontWeight: states.contains(WidgetState.selected) ? FontWeight.w600 : FontWeight.w500,
+              letterSpacing: 0.1,
+              color: states.contains(WidgetState.selected) ? Colors.white : Colors.white60,
+            ),
+          ),
         ),
       ),
       home: const MainScreen(),
@@ -212,12 +230,66 @@ class _MainScreenState extends State<MainScreen> {
     final int selectedNavIndex = _currentIndex <= 1 ? 0 : _currentIndex - 1;
 
     final isNumerator = DateFormatter.getWeekType(DateTime.now()) == 'Числитель';
-    // Оставляем оранжевый цвет для числителя, как просил ранее
     final Color activeColor =
         isNumerator ? const Color(0xFFFF8C00) : const Color(0xFF42A5F5);
         
     final bool isIOS = !kIsWeb && Platform.isIOS;
-    final double indicatorBottomOffset = isIOS ? 100 : 80;
+    final double indicatorBottomOffset = isIOS ? 100 : (80 + 10); // для стандартного навбара Android (высота 80 + отступ 10)
+
+    Widget? bottomNavigationBar;
+    
+    if (isIOS) {
+      bottomNavigationBar = NativeGlassNavBar(
+        currentIndex: selectedNavIndex,
+        tintColor: activeColor,
+        onTap: (index) {
+          if (index == 0) {
+            _goToPage(0);
+          } else {
+            _goToPage(index + 1);
+          }
+        },
+        tabs: [
+          for (final item in _navItems)
+            NativeGlassNavBarItem(
+              label: item.label,
+              symbol: item.sfSymbol,
+            ),
+        ],
+      );
+    } else {
+      // Стандартный Android Material 3 NavigationBar (до всяких "glass" экспериментов)
+      bottomNavigationBar = ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        child: Theme(
+          data: Theme.of(context).copyWith(
+            navigationBarTheme: Theme.of(context).navigationBarTheme.copyWith(
+              // Делаем цвет выделения динамическим (синий/оранжевый) с прозрачностью
+              indicatorColor: activeColor.withOpacity(0.25),
+            ),
+          ),
+          child: NavigationBar(
+            selectedIndex: selectedNavIndex,
+            onDestinationSelected: (index) {
+              if (index == 0) {
+                _goToPage(0);
+              } else {
+                _goToPage(index + 1);
+              }
+            },
+            surfaceTintColor: Colors.transparent,
+            destinations: [
+              for (final item in _navItems)
+                NavigationDestination(
+                  icon: Icon(item.icon),
+                  selectedIcon: Icon(item.selectedIcon, color: activeColor),
+                  label: item.label,
+                ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       extendBody: true,
@@ -241,168 +313,7 @@ class _MainScreenState extends State<MainScreen> {
             ),
         ],
       ),
-      bottomNavigationBar: NativeGlassNavBar(
-        currentIndex: selectedNavIndex,
-        tintColor: activeColor,
-        onTap: (index) {
-          if (index == 0) {
-            _goToPage(0);
-          } else {
-            _goToPage(index + 1);
-          }
-        },
-        tabs: [
-          for (final item in _navItems)
-            NativeGlassNavBarItem(
-              label: item.label,
-              symbol: item.sfSymbol,
-            ),
-        ],
-        // Возвращаем старый кастомный fallback для Android
-        fallback: _PillFallbackNavBar(
-          items: _navItems,
-          selectedIndex: selectedNavIndex,
-          activeColor: activeColor,
-          onTap: (index) {
-            if (index == 0) {
-              _goToPage(0);
-            } else {
-              _goToPage(index + 1);
-            }
-          },
-        ),
-      ),
+      bottomNavigationBar: bottomNavigationBar,
     );
-  }
-}
-
-class _PillFallbackNavBar extends StatelessWidget {
-  final List<_NavItemData> items;
-  final int selectedIndex;
-  final Color activeColor;
-  final ValueChanged<int> onTap;
-
-  const _PillFallbackNavBar({
-    required this.items,
-    required this.selectedIndex,
-    required this.activeColor,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final bool isIOS = !kIsWeb && Platform.isIOS;
-    
-    Widget navBarContent = Padding(
-      // Для iOS делаем отступ снизу 16, для Android - 8 (прижимаем к низу)
-      padding: EdgeInsets.only(
-        left: 24.0, 
-        right: 24.0, 
-        top: 16.0, 
-        bottom: isIOS ? 16.0 : 8.0
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(35),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.3),
-              blurRadius: 15,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(35),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 25.0, sigmaY: 25.0),
-            child: Container(
-              height: 70,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.5),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.2),
-                  width: 1.5,
-                ),
-                borderRadius: BorderRadius.circular(35),
-              ),
-              child: Stack(
-                children: [
-                  AnimatedPositioned(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeOutCubic,
-                    left: _calculateIndicatorPosition(selectedIndex, context),
-                    top: 6,
-                    bottom: 6,
-                    width: _calculateIndicatorWidth(context),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: activeColor.withOpacity(0.25),
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                    ),
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: List.generate(items.length, (index) {
-                      final isSelected = selectedIndex == index;
-                      return Expanded(
-                        child: GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: () => onTap(index),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                isSelected
-                                    ? items[index].selectedIcon
-                                    : items[index].icon,
-                                color: isSelected
-                                    ? activeColor
-                                    : const Color(0xFF4A3525),
-                                size: 26,
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                items[index].label,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: isSelected
-                                      ? FontWeight.w600
-                                      : FontWeight.w500,
-                                  color: isSelected
-                                      ? activeColor
-                                      : const Color(0xFF4A3525),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-
-    if (isIOS) {
-      return SafeArea(child: navBarContent);
-    } 
-    
-    return navBarContent;
-  }
-
-  double _calculateIndicatorWidth(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final availableWidth = screenWidth - 48;
-    return availableWidth / items.length;
-  }
-
-  double _calculateIndicatorPosition(int index, BuildContext context) {
-    return index * _calculateIndicatorWidth(context);
   }
 }
