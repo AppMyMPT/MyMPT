@@ -63,7 +63,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '953723484494',
     projectId: 'mympt-fc53d',
     storageBucket: 'mympt-fc53d.firebasestorage.app',
-    iosBundleId: 'com.example.myMpt',
+    iosBundleId: 'ru.merrcurys.my-mpt',
   );
 
 }
