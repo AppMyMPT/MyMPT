@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:my_mpt/core/services/notification_service.dart';
@@ -74,8 +75,21 @@ class FcmFirestoreService {
         'token': token,
         'groupCode': groupCode,
         'updatedAt': FieldValue.serverTimestamp(),
+        'device': _deviceName,
       });
     } catch (_) {}
+  }
+
+  /// Платформа устройства для сохранения в Firestore: Android или iOS.
+  static String get _deviceName {
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+        return 'Android';
+      case TargetPlatform.iOS:
+        return 'iOS';
+      default:
+        return 'Unknown';
+    }
   }
 
   String _tokenToDocId(String token) {
