@@ -118,6 +118,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _loadSpecialties() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
     try {
       final specialties = await _specialtyRepository.getSpecialties();
@@ -125,15 +126,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
           .map((s) => data_model.Specialty(code: s.code, name: s.name))
           .toList();
 
+      if (!mounted) return;
       setState(() {
         _specialties = dataSpecialties.cast<data_model.Specialty>();
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isLoading = false);
-      if (mounted) {
-        showErrorNotification(context, 'Ошибка загрузки', 'Не удалось загрузить специальности', Icons.error_outline);
-      }
+      showErrorNotification(context, 'Ошибка загрузки', 'Не удалось загрузить специальности', Icons.error_outline);
     }
   }
 
@@ -146,6 +147,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (lastUpdateIso != null && lastUpdateIso.isNotEmpty) {
         try { _lastUpdate = DateTime.parse(lastUpdateIso); } catch (_) {}
       }
+
+      if (!mounted) return;
 
       setState(() {
         _selectedRole = role;
@@ -173,7 +176,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               );
             }
             if (_selectedSpecialty != null && _selectedSpecialty!.code.isNotEmpty) {
-              Future.delayed(const Duration(milliseconds: 100), () => _loadGroups(_selectedSpecialty!.code));
+              Future.delayed(const Duration(milliseconds: 100), () {
+                if (mounted) _loadGroups(_selectedSpecialty!.code);
+              });
             }
           }
         } else {
@@ -214,6 +219,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _refreshSchedule() async {
+    if (!mounted) return;
     setState(() {
       _isRefreshing = true;
       _refreshElapsed = Duration.zero;
@@ -293,7 +299,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         fromToChange = 'Версия успешно изменена с преподавателя на студента';
       }
 
-      setState(() {});
+      if (mounted) setState(() {});
       
       await _repository.refreshAllDataWithStatus(forceRefresh: true);
       _repository.dataUpdatedNotifier.value = !_repository.dataUpdatedNotifier.value;
@@ -307,6 +313,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _loadGroups(String specialtyCode) async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
     try {
       final groups = await _groupRepository.getGroupsBySpecialty(specialtyCode);
@@ -331,18 +338,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
         }
       }
 
+      if (!mounted) return;
       setState(() {
         _groups = sortedGroups;
         _isLoading = false;
         if (selectedGroup != null) _selectedGroup = selectedGroup;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isLoading = false);
-      if (mounted) showErrorNotification(context, 'Ошибка загрузки', 'Не удалось загрузить группы', Icons.error_outline);
+      showErrorNotification(context, 'Ошибка загрузки', 'Не удалось загрузить группы', Icons.error_outline);
     }
   }
 
   Future<void> _loadTeachers() async {
+     if (!mounted) return;
      setState(() => _isLoading = true);
      try {
         final teachers = await _teacherRepository.getTeachers();
@@ -366,18 +376,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
            }
         }
         
+        if (!mounted) return;
         setState(() {
            _teachers = teachers;
            _isLoading = false;
            if (selectedTeacher != null) _selectedTeacher = selectedTeacher;
         });
      } catch (e) {
+        if (!mounted) return;
         setState(() => _isLoading = false);
-        if (mounted) showErrorNotification(context, 'Ошибка', 'Не удалось загрузить преподавателей', Icons.error_outline);
+        showErrorNotification(context, 'Ошибка', 'Не удалось загрузить преподавателей', Icons.error_outline);
      }
   }
 
   Future<void> _onSpecialtySelected(data_model.Specialty specialty) async {
+    if (!mounted) return;
     setState(() {
       _selectedSpecialty = specialty;
       _groups = [];
@@ -391,6 +404,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _onGroupSelected(Group group) async {
+    if (!mounted) return;
     setState(() => _selectedGroup = group);
 
     try {
@@ -402,6 +416,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       try {
         final ok = await _repository.refreshAllDataWithStatus(forceRefresh: true);
         final lastUpdateIso = prefs.getString('schedule_cache_last_update');
+        
+        if (!mounted) return;
+        
         if (lastUpdateIso != null && lastUpdateIso.isNotEmpty) {
           try { setState(() => _lastUpdate = DateTime.parse(lastUpdateIso)); } catch (_) {}
         } else if (_repository.lastUpdate != null) {
@@ -427,6 +444,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
   
   void _onTeacherSelected(Teacher teacher) async {
+    if (!mounted) return;
     setState(() => _selectedTeacher = teacher);
 
     try {
