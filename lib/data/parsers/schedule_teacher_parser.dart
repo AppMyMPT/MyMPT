@@ -13,18 +13,36 @@ class ScheduleTeacherParser {
     final parts = teacherName.trim().split(RegExp(r'\s+')).where((e) => e.isNotEmpty).toList();
     if (parts.isEmpty) return {};
 
-    final lastName = parts.first.toLowerCase();
-    
-    // Формируем "нормализованные" инициалы. Например: "И. И." -> "и.и." или "Иван Иванович" -> "и.и."
+    String lastName = '';
     String initialsNormalized = '';
-    if (parts.length >= 2) {
-      final rest = parts.sublist(1).join(' ').toLowerCase();
 
-      if (rest.contains('.')) {
-        initialsNormalized = rest.replaceAll(' ', ''); 
+    // Определяем фамилию (самое длинное слово без точек, либо первое/последнее)
+    final wordsWithoutDots = parts.where((p) => !p.contains('.')).toList();
+    if (wordsWithoutDots.isNotEmpty) {
+      final candidates = wordsWithoutDots.where((w) => w.length > 2).toList();
+      if (candidates.isNotEmpty) {
+        if (candidates.contains(parts.first)) {
+          lastName = parts.first.toLowerCase();
+        } else {
+          lastName = candidates.last.toLowerCase();
+        }
       } else {
-        final initials = parts.sublist(1).take(2).map((p) => p.isNotEmpty ? p[0].toLowerCase() : '').where((c) => c.isNotEmpty).toList();
-        initialsNormalized = initials.map((c) => '$c.').join(); 
+        lastName = wordsWithoutDots.first.toLowerCase();
+      }
+    } else {
+      lastName = parts.last.toLowerCase();
+    }
+
+    // Инициалы
+    final otherParts = parts.where((p) => p.toLowerCase() != lastName).toList();
+    if (otherParts.isNotEmpty) {
+      final rest = otherParts.join(' ').toLowerCase();
+      if (rest.contains('.')) {
+        initialsNormalized = rest.replaceAll(' ', '');
+      } else {
+        // Если точки нет (например, "Иван Иванович"), берем первые буквы
+        final initials = otherParts.take(2).map((p) => p.isNotEmpty ? p[0].toLowerCase() : '').where((c) => c.isNotEmpty).toList();
+        initialsNormalized = initials.map((c) => '$c.').join();
       }
     }
 
