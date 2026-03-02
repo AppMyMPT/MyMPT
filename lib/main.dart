@@ -216,14 +216,12 @@ class _MainScreenState extends State<MainScreen> {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
           child: Container(
-            height: 70,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.85), // Полупрозрачный белый фон
               borderRadius: BorderRadius.circular(35),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 10,
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 15,
                   offset: const Offset(0, 5),
                 ),
               ],
@@ -231,60 +229,71 @@ class _MainScreenState extends State<MainScreen> {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(35),
               child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 15.0, sigmaY: 15.0),
-                child: Stack(
-                  children: [
-                    // Анимированный фон (овал) для выбранного элемента
-                    AnimatedPositioned(
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeOutCubic,
-                      left: _calculateIndicatorPosition(selectedNavIndex, context),
-                      top: 6,
-                      bottom: 6,
-                      width: _calculateIndicatorWidth(context),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: activeColor.withOpacity(0.2), // Цвет подложки привязан к неделе
-                          borderRadius: BorderRadius.circular(30),
+                filter: ImageFilter.blur(sigmaX: 25.0, sigmaY: 25.0),
+                child: Container(
+                  height: 70,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.5), // Высокая прозрачность для правильного блюра
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.2), // Тонкая граница усиливает эффект стекла
+                      width: 1.5,
+                    ),
+                    borderRadius: BorderRadius.circular(35),
+                  ),
+                  child: Stack(
+                    children: [
+                      // Анимированный фон (овал) для выбранного элемента
+                      AnimatedPositioned(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeOutCubic,
+                        left: _calculateIndicatorPosition(selectedNavIndex, context),
+                        top: 6,
+                        bottom: 6,
+                        width: _calculateIndicatorWidth(context),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: activeColor.withOpacity(0.25), // Цвет подложки привязан к неделе
+                            borderRadius: BorderRadius.circular(30),
+                          ),
                         ),
                       ),
-                    ),
-                    // Сами кнопки
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: List.generate(_navItems.length, (index) {
-                        final isSelected = selectedNavIndex == index;
-                        return Expanded(
-                          child: GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: () {
-                              if (index == 0) _goToPage(0);
-                              else _goToPage(index + 1);
-                            },
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  isSelected ? _navItems[index].selectedIcon : _navItems[index].icon,
-                                  color: isSelected ? activeColor : const Color(0xFF4A3525), // Цвет иконки привязан к неделе
-                                  size: 26,
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  _navItems[index].label,
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                                    color: isSelected ? activeColor : const Color(0xFF4A3525), // Цвет текста привязан к неделе
+                      // Сами кнопки
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: List.generate(_navItems.length, (index) {
+                          final isSelected = selectedNavIndex == index;
+                          return Expanded(
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () {
+                                if (index == 0) _goToPage(0);
+                                else _goToPage(index + 1);
+                              },
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    isSelected ? _navItems[index].selectedIcon : _navItems[index].icon,
+                                    color: isSelected ? activeColor : const Color(0xFF4A3525), // Цвет иконки привязан к неделе
+                                    size: 26,
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    _navItems[index].label,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                                      color: isSelected ? activeColor : const Color(0xFF4A3525), // Цвет текста привязан к неделе
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        );
-                      }),
-                    ),
-                  ],
+                          );
+                        }),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
