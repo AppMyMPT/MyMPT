@@ -11,6 +11,7 @@ const cheerio = require("cheerio");
 const cron = require("node-cron");
 const fs = require("fs");
 const path = require("path");
+const log = require("./logger");
 
 const REPLACEMENTS_URL = "https://mpt.ru/izmeneniya-v-raspisanii/";
 const FCM_TOKENS_COLLECTION = "fcm_tokens";
@@ -26,6 +27,7 @@ function ensureDataDir() {
   const dir = path.dirname(STATE_FILE);
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
+    log.debug("Создана папка данных:", dir);
   }
 }
 
@@ -33,9 +35,15 @@ function loadLastState() {
   ensureDataDir();
   try {
     const raw = fs.readFileSync(STATE_FILE, "utf8");
-    return JSON.parse(raw);
+    const state = JSON.parse(raw);
+    const keys = Object.keys(state);
+    log.debug("Загружено последнее состояние из", STATE_FILE, "групп:", keys.length, keys);
+    return state;
   } catch (e) {
-    if (e.code === "ENOENT") return {};
+    if (e.code === "ENOENT") {
+      log.debug("Файла состояния нет, начинаем с нуля");
+      return {};
+    }
     throw e;
   }
 }
@@ -43,6 +51,7 @@ function loadLastState() {
 function saveLastState(state) {
   ensureDataDir();
   fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2), "utf8");
+  log.debug("Состояние сохранено в", STATE_FILE, "групп:", Object.keys(state).length);
 }
 
 function normalizeGroupCode(input) {
@@ -147,13 +156,29 @@ function parseReplacementsByGroup(html) {
     }
   });
 
+  const totalRows = [...result.values()].reduce((s, rows) => s + rows.length, 0);
+  log.debug(
+    "Распарсены замены: блоков=",
+    result.size,
+    "подписи=",
+    [...result.keys()],
+    "всего строк=",
+    totalRows
+  );
   return result;
 }
 
 function getReplacementsForGroup(parsedByCaption, groupCode) {
+  const seen = new Set();
   const list = [];
   for (const [caption, replacements] of parsedByCaption) {
-    if (captionMatchesGroup(caption, groupCode)) list.push(...replacements);
+    if (!captionMatchesGroup(caption, groupCode)) continue;
+    for (const r of replacements) {
+      const h = replacementHash(r);
+      if (seen.has(h)) continue;
+      seen.add(h);
+      list.push(r);
+    }
   }
   return list;
 }
@@ -176,6 +201,8 @@ function groupDocId(groupCode) {
 }
 
 async function runCheck() {
+  log.info("Проверка запущена", { url: REPLACEMENTS_URL });
+
   const db = admin.firestore();
   const messaging = admin.messaging();
   const state = loadLastState();
@@ -188,14 +215,15 @@ async function runCheck() {
       headers: { "User-Agent": "MymptReplacementService/1.0" },
     });
     html = res.data;
+    log.info("Страница загружена", { status: res.status, length: html.length });
   } catch (e) {
-    console.error("[runCheck] Fetch failed:", e.message);
+    log.error("Ошибка загрузки страницы", e.message, e.code || "");
     return;
   }
 
   const parsedByCaption = parseReplacementsByGroup(html);
   if (parsedByCaption.size === 0) {
-    console.log("[runCheck] No replacement blocks for today/tomorrow.");
+    log.info("Нет блоков замен на сегодня/завтра, пропуск");
     return;
   }
 
@@ -209,13 +237,30 @@ async function runCheck() {
     if (!tokensByGroup.has(groupCode)) tokensByGroup.set(groupCode, []);
     tokensByGroup.get(groupCode).push({ token, docRef: doc.ref });
   }
+  log.info("Загружены FCM-токены", { groups: tokensByGroup.size, docs: tokensSnap.size });
 
   for (const [groupCode, tokens] of tokensByGroup) {
     const replacements = getReplacementsForGroup(parsedByCaption, groupCode);
     const key = groupDocId(groupCode);
     const lastHashes = state[key] && state[key].hashes ? state[key].hashes : [];
 
-    if (!hasNewReplacements(replacements, lastHashes)) continue;
+    if (!hasNewReplacements(replacements, lastHashes)) {
+      log.debug("Нет новых замен для группы", groupCode);
+      continue;
+    }
+
+    // Не уведомлять, если замен для группы нет (раньше были — сняли). Только обновить state.
+    if (replacements.length === 0) {
+      log.debug("Замены для группы сняты, обновляем state без уведомления", groupCode);
+      state[key] = {
+        groupCode,
+        hashes: [],
+        updatedAt: new Date().toISOString(),
+      };
+      continue;
+    }
+
+    log.info("Новые замены для группы", groupCode, "количество:", replacements.length, "токенов:", tokens.length);
 
     const title =
       replacements.length === 1
@@ -227,6 +272,7 @@ async function runCheck() {
         ? `${first.changeDate}: Пара ${first.lessonNumber}: ${first.replaceFrom} → ${first.replaceTo}`
         : `Обнаружено новых замен: ${replacements.length}`;
 
+    let sentCount = 0;
     for (const { token, docRef } of tokens) {
       try {
         await messaging.send({
@@ -234,6 +280,7 @@ async function runCheck() {
           notification: { title, body },
           android: { priority: "high" },
         });
+        sentCount++;
       } catch (sendErr) {
         if (
           sendErr.code === "messaging/invalid-registration-token" ||
@@ -241,10 +288,14 @@ async function runCheck() {
         ) {
           try {
             await docRef.delete();
+            log.info("Удалён недействительный токен", docRef.id);
           } catch (_) {}
         }
-        console.warn("[runCheck] FCM send failed:", docRef.id, sendErr.message);
+        log.warn("Ошибка отправки FCM", docRef.id, sendErr.message, sendErr.code || "");
       }
+    }
+    if (sentCount > 0) {
+      log.info("FCM отправлены", groupCode, "успешно:", sentCount, "из", tokens.length);
     }
 
     state[key] = {
@@ -255,36 +306,42 @@ async function runCheck() {
   }
 
   saveLastState(state);
-  console.log("[runCheck] Done.");
+  log.info("Проверка завершена");
 }
 
 function main() {
+  log.info("Запуск mpt-replacement-service", {
+    stateFile: STATE_FILE,
+    logFile: log.getLogPath ? log.getLogPath() : "только stdout",
+  });
+
   if (!fs.existsSync(CREDENTIALS_PATH)) {
-    console.error(
-      "Firebase service account not found. Set GOOGLE_APPLICATION_CREDENTIALS or place firebase-service-account.json in the app directory."
+    log.error(
+      "Файл учётных данных Firebase не найден. Задайте GOOGLE_APPLICATION_CREDENTIALS или положите firebase-service-account.json в папку приложения."
     );
     process.exit(1);
   }
 
   const key = JSON.parse(fs.readFileSync(CREDENTIALS_PATH, "utf8"));
   admin.initializeApp({ credential: admin.credential.cert(key) });
+  log.info("Firebase инициализирован");
 
   const runEveryHour = process.env.CRON_SCHEDULE || "0 * * * *";
-  console.log("Scheduling check with cron:", runEveryHour);
+  log.info("Планировщик: проверка по cron:", runEveryHour);
 
   if (process.env.RUN_ONCE === "1") {
     runCheck()
       .then(() => process.exit(0))
       .catch((e) => {
-        console.error(e);
+        log.error("Проверка завершилась с ошибкой", e.message, e.stack);
         process.exit(1);
       });
     return;
   }
 
-  runCheck().catch((e) => console.error("[runCheck]", e));
+  runCheck().catch((e) => log.error("Проверка: ошибка", e.message, e.stack));
   cron.schedule(runEveryHour, () => {
-    runCheck().catch((e) => console.error("[runCheck]", e));
+    runCheck().catch((e) => log.error("Проверка: ошибка", e.message, e.stack));
   });
 }
 

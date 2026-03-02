@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:my_mpt/data/models/lesson.dart';
 import 'package:my_mpt/data/parsers/schedule_parser.dart';
+import 'package:my_mpt/data/parsers/schedule_teacher_parser.dart';
 
 Map<String, List<Map<String, dynamic>>> _parseScheduleIsolate(
   Map<String, dynamic> message,
@@ -12,7 +13,19 @@ Map<String, List<Map<String, dynamic>>> _parseScheduleIsolate(
   final html = message['html'] as String? ?? '';
   final groupCode = message['groupCode'] as String? ?? '';
 
-  final parsed = ScheduleParser().parse(html, groupCode); // логика прежняя
+  final parsed = ScheduleParser().parse(html, groupCode);
+  return parsed.map(
+    (day, lessons) => MapEntry(day, lessons.map((l) => l.toJson()).toList()),
+  );
+}
+
+Map<String, List<Map<String, dynamic>>> _parseTeacherScheduleIsolate(
+  Map<String, dynamic> message,
+) {
+  final html = message['html'] as String? ?? '';
+  final teacherName = message['teacherName'] as String? ?? '';
+
+  final parsed = ScheduleTeacherParser().parse(html, teacherName);
   return parsed.map(
     (day, lessons) => MapEntry(day, lessons.map((l) => l.toJson()).toList()),
   );
@@ -32,19 +45,26 @@ class ScheduleRemoteDatasource {
 
   String? _cachedHtml;
   DateTime? _lastFetch;
+  
+  // Возвращаем на ту же самую страницу, потому что парсер преподавателей
+  // ищет их по таблицам студентов. Отдельной страницы /raspisanie-prepodavateley/ больше нет.
+  final String teacherBaseUrl = 'https://mpt.ru/raspisanie/';
+  String? _cachedTeacherHtml;
+  DateTime? _lastTeacherFetch;
 
   Future<Map<String, List<Lesson>>> fetchWeeklySchedule(
-    String groupCode, {
+    String targetName, {
     bool forceRefresh = false,
+    bool isTeacher = false,
   }) async {
-    if (groupCode.isEmpty) return {};
+    if (targetName.isEmpty) return {};
 
     try {
-      final html = await _fetchSchedulePage(forceRefresh: forceRefresh);
+      final html = await _fetchSchedulePage(forceRefresh: forceRefresh, isTeacher: isTeacher);
 
       final decoded = await compute(
-        _parseScheduleIsolate,
-        {'html': html, 'groupCode': groupCode},
+        isTeacher ? _parseTeacherScheduleIsolate : _parseScheduleIsolate,
+        {'html': html, isTeacher ? 'teacherName' : 'groupCode': targetName},
       );
 
       final result = <String, List<Lesson>>{};
@@ -52,30 +72,46 @@ class ScheduleRemoteDatasource {
         result[day] = lessonMaps.map(Lesson.fromJson).toList();
       });
 
+      if (result.isEmpty) {
+        throw Exception('Сайт МПТ вернул пустую страницу или расписание для "$targetName" не найдено. Возможно, включена защита от ботов или ведутся технические работы.');
+      }
+
       return result;
     } catch (error) {
-      throw Exception('Error fetching schedule for group $groupCode: $error');
+      throw Exception('Error fetching schedule for ${isTeacher ? 'teacher' : 'group'} $targetName: $error');
     }
   }
 
-  Future<String> _fetchSchedulePage({bool forceRefresh = false}) async {
-    final isCacheValid = _cachedHtml != null &&
-        _lastFetch != null &&
-        DateTime.now().difference(_lastFetch!) < cacheTtl;
+  Future<String> _fetchSchedulePage({bool forceRefresh = false, bool isTeacher = false}) async {
+    final lastFetch = isTeacher ? _lastTeacherFetch : _lastFetch;
+    final cachedHtml = isTeacher ? _cachedTeacherHtml : _cachedHtml;
+    
+    final isCacheValid = cachedHtml != null &&
+        lastFetch != null &&
+        DateTime.now().difference(lastFetch) < cacheTtl;
 
     if (!forceRefresh && isCacheValid) {
-      return _cachedHtml!;
+      return cachedHtml!;
     }
 
-    final freshHtml = await _loadFromNetwork();
-    _cachedHtml = freshHtml;
-    _lastFetch = DateTime.now();
+    final freshHtml = await _loadFromNetwork(isTeacher: isTeacher);
+    
+    if (isTeacher) {
+      _cachedTeacherHtml = freshHtml;
+      _lastTeacherFetch = DateTime.now();
+    } else {
+      _cachedHtml = freshHtml;
+      _lastFetch = DateTime.now();
+    }
+    
     return freshHtml;
   }
 
-  Future<String> _loadFromNetwork() async {
+  Future<String> _loadFromNetwork({bool isTeacher = false}) async {
+    final url = isTeacher ? teacherBaseUrl : baseUrl;
+    
     final response = await _client
-        .get(Uri.parse(baseUrl))
+        .get(Uri.parse(url))
         .timeout(
           const Duration(seconds: 15),
           onTimeout: () => throw const HttpException(
@@ -87,12 +123,13 @@ class ScheduleRemoteDatasource {
       throw HttpException('Не удалось загрузить страницу: ${response.statusCode}');
     }
 
-    // На некоторых сайтах android чаще ловит проблемы с кодировкой через response.body
     return utf8.decode(response.bodyBytes);
   }
 
   void clearCache() {
     _cachedHtml = null;
     _lastFetch = null;
+    _cachedTeacherHtml = null;
+    _lastTeacherFetch = null;
   }
 }

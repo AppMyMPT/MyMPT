@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:my_mpt/data/repositories/specialty_repository.dart';
 import 'package:my_mpt/data/repositories/group_repository.dart';
+import 'package:my_mpt/data/repositories/teacher_repository.dart';
 import 'package:my_mpt/data/models/group.dart';
+import 'package:my_mpt/data/models/teacher.dart';
 import 'package:my_mpt/data/models/specialty.dart' as data_model;
 import 'package:my_mpt/domain/repositories/specialty_repository_interface.dart';
 import 'package:my_mpt/domain/repositories/group_repository_interface.dart';
@@ -10,11 +12,7 @@ import 'package:my_mpt/core/services/preload_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Экран приветствия и настройки приложения
-///
-/// Этот экран отображается при первом запуске приложения и позволяет
-/// пользователю выбрать свою специальность и группу
 class WelcomeScreen extends StatefulWidget {
-  /// Обратный вызов при завершении настройки
   final VoidCallback onSetupComplete;
 
   const WelcomeScreen({super.key, required this.onSetupComplete});
@@ -23,56 +21,55 @@ class WelcomeScreen extends StatefulWidget {
   State<WelcomeScreen> createState() => _WelcomeScreenState();
 }
 
-/// Состояние экрана приветствия
 class _WelcomeScreenState extends State<WelcomeScreen> {
-  /// Сервис предзагрузки данных
   final PreloadService _preloadService = PreloadService();
 
-  /// Список специальностей
   List<data_model.Specialty> _specialties = [];
-
-  /// Список групп
   List<Group> _groups = [];
+  List<Teacher> _teachers = [];
 
-  /// Выбранная специальность
   data_model.Specialty? _selectedSpecialty;
-
-  /// Выбранная группа
   Group? _selectedGroup;
+  Teacher? _selectedTeacher;
+  
+  // Роль: 'student' или 'teacher'
+  String _selectedRole = 'student';
 
-  /// Флаг загрузки специальностей
   bool _isLoading = false;
-
-  /// Флаг загрузки групп
   bool _isGroupsLoading = false;
+  bool _isTeachersLoading = false;
 
-  /// Текущая страница (0: приветствие, 1: выбор специальности, 2: выбор группы)
+  /// Текущая страница: 
+  /// 0: приветствие, 
+  /// 1: выбор роли (студент/преподаватель), 
+  /// 2: (Студент) выбор специальности, 
+  /// 3: (Студент) выбор группы / (Преподаватель) выбор преподавателя
   int _currentPage = 0;
 
-  /// Ключ для хранения выбранной группы в настройках
+  static const _selectedRoleKey = 'selected_role';
   static const _selectedSpecialtyKey = 'selected_specialty';
   static const _selectedGroupKey = 'selected_group';
+  // В ScheduleRepository используется ключ 'teacher', а не 'selected_teacher'
+  static const _teacherNameKey = 'teacher'; 
   static const _firstLaunchKey = 'first_launch';
 
   late SpecialtyRepositoryInterface _specialtyRepository;
   late GroupRepositoryInterface _groupRepository;
+  late TeacherRepository _teacherRepository;
 
   @override
   void initState() {
     super.initState();
     _specialtyRepository = SpecialtyRepository();
     _groupRepository = GroupRepository();
-    // Предзагружаем все данные при первом запуске
+    _teacherRepository = TeacherRepository();
     _preloadAllData();
   }
 
-  /// Предзагружает все специальности и группы в фоновом режиме
   Future<void> _preloadAllData() async {
-    // Запускаем предзагрузку в фоне, не блокируя UI
     _preloadService.preloadAllData();
   }
 
-  /// Загрузка списка специальностей
   Future<void> _loadSpecialties() async {
     setState(() {
       _isLoading = true;
@@ -80,7 +77,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
     try {
       final specialties = await _specialtyRepository.getSpecialties();
-      // Преобразуем доменные сущности в модели данных
       final dataSpecialties = specialties
           .map((s) => data_model.Specialty(code: s.code, name: s.name))
           .toList();
@@ -101,10 +97,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     }
   }
 
-  /// Загрузка списка групп по коду специальности
-  ///
-  /// Параметры:
-  /// - [specialtyCode]: Код специальности
   Future<void> _loadGroups(String specialtyCode) async {
     setState(() {
       _isGroupsLoading = true;
@@ -113,15 +105,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
     try {
       final groups = await _groupRepository.getGroupsBySpecialty(specialtyCode);
-      // Не выполняем дополнительную сортировку, так как группы уже отсортированы в репозитории
-      // Порядок сортировки: сначала по специальности, затем по году (новые года выше), затем по номеру группы
       final sortedGroups = List<Group>.from(groups);
 
       setState(() {
         _groups = sortedGroups;
         _isGroupsLoading = false;
 
-        // Проверяем, была ли ранее выбрана группа
         if (_selectedGroup != null) {
           final previouslySelected = sortedGroups.firstWhere(
             (group) => group.code == _selectedGroup!.code,
@@ -140,48 +129,96 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         _isGroupsLoading = false;
       });
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Ошибка загрузки групп')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Ошибка загрузки групп'))
+        );
       }
     }
   }
 
-  /// Сохранение выбранной специальности и группы и переход к основному приложению
-  Future<void> _saveSelectionAndProceed() async {
-    if (_selectedSpecialty == null || _selectedGroup == null) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Пожалуйста, выберите специальность и группу'),
-          ),
-        );
-      }
-      return;
-    }
+  Future<void> _loadTeachers() async {
+    setState(() {
+      _isTeachersLoading = true;
+      _teachers = [];
+    });
 
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final teachers = await _teacherRepository.getTeachers();
+      setState(() {
+        _teachers = teachers;
+        _isTeachersLoading = false;
+        
+        if (_selectedTeacher != null) {
+          final previouslySelected = teachers.firstWhere(
+            (t) => t.teacherName == _selectedTeacher!.teacherName,
+            orElse: () => Teacher(teacherName: ''),
+          );
+
+          if (previouslySelected.teacherName.isNotEmpty) {
+            _selectedTeacher = previouslySelected;
+          } else {
+            _selectedTeacher = null;
+          }
+        }
+      });
+    } catch (e) {
+      setState(() {
+        _isTeachersLoading = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Ошибка загрузки преподавателей'))
+        );
+      }
+    }
+  }
+
+  Future<void> _saveSelectionAndProceed() async {
+    final prefs = await SharedPreferences.getInstance();
+    
+    await prefs.setString(_selectedRoleKey, _selectedRole);
+
+    if (_selectedRole == 'student') {
+      if (_selectedSpecialty == null || _selectedGroup == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Пожалуйста, выберите специальность и группу')),
+          );
+        }
+        return;
+      }
       await prefs.setString(_selectedSpecialtyKey, _selectedSpecialty!.code);
-      await prefs.setString(
-        '${_selectedSpecialtyKey}_name',
-        _selectedSpecialty!.name,
-      );
+      await prefs.setString('${_selectedSpecialtyKey}_name', _selectedSpecialty!.name);
       await prefs.setString(_selectedGroupKey, _selectedGroup!.code);
-      await prefs.setBool(_firstLaunchKey, false);
+      
+      // Сбрасываем преподавателя, если он был выбран
+      await prefs.remove(_teacherNameKey);
+
       try {
         await FcmFirestoreService().syncTokenWithGroup();
       } catch (_) {}
+      
+    } else {
+      if (_selectedTeacher == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Пожалуйста, выберите преподавателя')),
+          );
+        }
+        return;
+      }
+      await prefs.setString(_teacherNameKey, _selectedTeacher!.teacherName);
+      
+      // Сбрасываем группу, если она была выбрана
+      await prefs.remove(_selectedSpecialtyKey);
+      await prefs.remove('${_selectedSpecialtyKey}_name');
+      await prefs.remove(_selectedGroupKey);
+    }
 
-      if (mounted) {
-        widget.onSetupComplete();
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Ошибка сохранения настроек')),
-        );
-      }
+    await prefs.setBool(_firstLaunchKey, false);
+
+    if (mounted) {
+      widget.onSetupComplete();
     }
   }
 
@@ -201,33 +238,28 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     );
   }
 
-  /// Создание содержимого страницы в зависимости от текущего состояния
-  ///
-  /// Возвращает:
-  /// - Widget: Виджет содержимого страницы
   Widget _buildPageContent() {
     switch (_currentPage) {
       case 0:
         return _buildWelcomePage();
       case 1:
-        return _buildSpecialtySelectionPage();
+        return _buildRoleSelectionPage();
       case 2:
+        return _selectedRole == 'student' 
+          ? _buildSpecialtySelectionPage() 
+          : _buildTeacherSelectionPage();
+      case 3:
         return _buildGroupSelectionPage();
       default:
         return _buildWelcomePage();
     }
   }
 
-  /// Создание страницы приветствия
-  ///
-  /// Возвращает:
-  /// - Widget: Виджет страницы приветствия
   Widget _buildWelcomePage() {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Логотип или иконка (можно заменить на реальный логотип)
           Container(
             width: 120,
             height: 120,
@@ -268,7 +300,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           ),
           const SizedBox(height: 30),
           const Text(
-            'Мы рады, что вы выбрали именно этот техникум для обучения. Мы разработали это приложение, чтобы вам было более комфортно смотреть расписание.',
+            'Мы рады, что вы выбрали именно этот техникум. Мы разработали это приложение, чтобы вам было более комфортно смотреть расписание.',
             style: TextStyle(fontSize: 16, color: Colors.white70, height: 1.5),
             textAlign: TextAlign.center,
           ),
@@ -281,7 +313,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 setState(() {
                   _currentPage = 1;
                 });
-                _loadSpecialties();
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
@@ -306,10 +337,140 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     );
   }
 
-  /// Создание страницы выбора специальности
-  ///
-  /// Возвращает:
-  /// - Widget: Виджет страницы выбора специальности
+  Widget _buildRoleSelectionPage() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Text(
+          'Кто вы?',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 10),
+        const Text(
+          'Выберите версию для отображения расписания',
+          style: TextStyle(fontSize: 16, color: Colors.white70),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 40),
+        
+        _buildRoleOption(
+          title: 'Студент',
+          icon: Icons.person_outline,
+          value: 'student',
+        ),
+        const SizedBox(height: 20),
+        _buildRoleOption(
+          title: 'Преподаватель',
+          icon: Icons.work_outline,
+          value: 'teacher',
+        ),
+
+        const SizedBox(height: 50),
+        SizedBox(
+          width: double.infinity,
+          height: 50,
+          child: ElevatedButton(
+            onPressed: () {
+              setState(() {
+                _currentPage = 2;
+              });
+              if (_selectedRole == 'student') {
+                _loadSpecialties();
+              } else {
+                _loadTeachers();
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.black,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(25),
+              ),
+              elevation: 5,
+            ),
+            child: const Text(
+              'Продолжить',
+              style: TextStyle(
+                color: Colors.black,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        TextButton(
+          onPressed: () {
+            setState(() {
+              _currentPage = 0;
+            });
+          },
+          style: ButtonStyle(
+            overlayColor: WidgetStateProperty.all<Color>(Colors.white30),
+          ),
+          child: const Text(
+            'Назад',
+            style: TextStyle(color: Colors.white70, fontSize: 16),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRoleOption({required String title, required IconData icon, required String value}) {
+    final isSelected = _selectedRole == value;
+    
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedRole = value;
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        height: 80,
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.white.withValues(alpha: 0.15) : const Color(0xFF111111),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? Colors.white : Colors.white24,
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            const SizedBox(width: 20),
+            Icon(
+              icon, 
+              color: isSelected ? Colors.white : Colors.white70,
+              size: 32,
+            ),
+            const SizedBox(width: 20),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                color: isSelected ? Colors.white : Colors.white70,
+              ),
+            ),
+            const Spacer(),
+            if (isSelected)
+              const Padding(
+                padding: EdgeInsets.only(right: 20),
+                child: Icon(Icons.check_circle, color: Colors.white),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildSpecialtySelectionPage() {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -325,7 +486,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         ),
         const SizedBox(height: 30),
         Container(
-          height: 50, // Уменьшена высота контейнера
+          height: 50,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
             color: const Color(0xFF111111),
@@ -381,7 +542,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             onPressed: _selectedSpecialty != null
                 ? () {
                     setState(() {
-                      _currentPage = 2;
+                      _currentPage = 3;
                     });
                     _loadGroups(_selectedSpecialty!.code);
                   }
@@ -410,7 +571,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         TextButton(
           onPressed: () {
             setState(() {
-              _currentPage = 0;
+              _currentPage = 1;
             });
           },
           style: ButtonStyle(
@@ -425,10 +586,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     );
   }
 
-  /// Создание страницы выбора группы
-  ///
-  /// Возвращает:
-  /// - Widget: Виджет страницы выбора группы
   Widget _buildGroupSelectionPage() {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -528,7 +685,121 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         TextButton(
           onPressed: () {
             setState(() {
-              _currentPage = 1;
+              _currentPage = 2; // Возврат к выбору специальности
+            });
+          },
+          style: ButtonStyle(
+            overlayColor: WidgetStateProperty.all<Color>(Colors.white30),
+          ),
+          child: const Text(
+            'Назад',
+            style: TextStyle(color: Colors.white70, fontSize: 16),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTeacherSelectionPage() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Text(
+          'Выберите преподавателя',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 30),
+        Container(
+          height: 50,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF111111),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white24),
+          ),
+          child: _isTeachersLoading
+              ? const Center(
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      strokeWidth: 2,
+                    ),
+                  ),
+                )
+              : DropdownButtonHideUnderline(
+                  child: DropdownButton<Teacher>(
+                    value: _selectedTeacher,
+                    hint: const Text(
+                      'Выберите преподавателя',
+                      style: TextStyle(color: Colors.white70),
+                    ),
+                    items: _teachers.map((Teacher teacher) {
+                      return DropdownMenuItem<Teacher>(
+                        value: teacher,
+                        child: Text(
+                          teacher.teacherName,
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (Teacher? newValue) {
+                      setState(() {
+                        _selectedTeacher = newValue;
+                      });
+                    },
+                    isExpanded: true,
+                    dropdownColor: const Color(0xFF111111),
+                    icon: const Icon(
+                      Icons.arrow_drop_down,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+        ),
+        const SizedBox(height: 20),
+        const Text(
+          'Изменить версию и преподавателя можно в настройках',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.white70, fontSize: 14),
+        ),
+        const SizedBox(height: 30),
+        SizedBox(
+          width: double.infinity,
+          height: 50,
+          child: ElevatedButton(
+            onPressed: _selectedTeacher != null ? _saveSelectionAndProceed : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.black,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(25),
+              ),
+              elevation: 5,
+              disabledBackgroundColor: Colors.white.withValues(alpha: 0.5),
+              disabledForegroundColor: Colors.black.withValues(alpha: 0.5),
+            ),
+            child: const Text(
+              'Готово',
+              style: TextStyle(
+                color: Colors.black,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        TextButton(
+          onPressed: () {
+            setState(() {
+              _currentPage = 1; // Возврат к выбору роли
             });
           },
           style: ButtonStyle(

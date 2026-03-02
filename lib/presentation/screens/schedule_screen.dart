@@ -7,10 +7,8 @@ import 'package:my_mpt/data/repositories/schedule_repository.dart';
 import 'package:my_mpt/domain/entities/schedule.dart';
 import 'package:my_mpt/presentation/widgets/schedule/day_section.dart';
 
-// Баннер как в Settings
 import 'package:my_mpt/presentation/widgets/settings/info_notification.dart';
 
-/// Экран "Расписание" — недельный лонг-лист + pinned шапка, которая сжимается только по высоте.
 class ScheduleScreen extends StatefulWidget {
   const ScheduleScreen({super.key});
 
@@ -27,10 +25,7 @@ class _ScheduleScreenState extends State {
   Map<String, List<Schedule>> _weeklySchedule = {};
   bool _isLoading = false;
 
-  /// true = показываем иконку wifi_off в шапке.
   bool _isOffline = false;
-
-  /// чтобы авто-обновление (на входе) не спамило одним и тем же баннером
   bool _autoOfflineNotified = false;
 
   @override
@@ -85,11 +80,7 @@ class _ScheduleScreenState extends State {
 
       setState(() {
         _weeklySchedule = weekly;
-
-        // - если не было попытки forceRefresh -> берём флаг из репозитория
-        // - если была попытка -> офлайн = !refreshOk
         _isOffline = refreshOk == null ? _repository.isOfflineBadgeVisible : !refreshOk;
-
         if (showLoader) _isLoading = false;
       });
 
@@ -132,57 +123,59 @@ class _ScheduleScreenState extends State {
       backgroundColor: _backgroundColor,
       body: isInitialLoading
           ? SafeArea(
+              bottom: false,
               child: const Center(child: CircularProgressIndicator(color: Colors.white)),
             )
           : Stack(
               children: [
                 SafeArea(
+                  bottom: false,
                   child: RefreshIndicator(
                     onRefresh: () => _loadScheduleData(forceRefresh: true, userInitiated: true),
                     color: Colors.white,
                     child: CustomScrollView(
                       slivers: [
                         SliverPersistentHeader(
-                      pinned: true,
-                      delegate: _HeightPinnedHeaderDelegate(
-                        backgroundColor: _backgroundColor,
-                        maxHeight: headerMaxHeight,
-                        minHeight: headerMinHeight,
-                        child: _CollapsibleWeekHeader(
-                          maxHeight: headerMaxHeight,
-                          minHeight: headerMinHeight,
-                          title: 'Неделя',
-                          dateLabel: dateLabel,
-                          weekType: weekType,
-                          gradient: _getHeaderGradient(weekType),
-                          isOffline: _isOffline,
-                        ),
-                      ),
-                    ),
-                    SliverPadding(
-                      padding: const EdgeInsets.symmetric(vertical: 24),
-                      sliver: SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                            final day = days[index];
-                            final building = _primaryBuilding(day.value);
-
-                            return DaySection(
-                              title: day.key,
-                              building: building,
-                              lessons: day.value,
-                              accentColor: _lessonAccent,
+                          pinned: true,
+                          delegate: _HeightPinnedHeaderDelegate(
+                            backgroundColor: _backgroundColor,
+                            maxHeight: headerMaxHeight,
+                            minHeight: headerMinHeight,
+                            child: _CollapsibleWeekHeader(
+                              maxHeight: headerMaxHeight,
+                              minHeight: headerMinHeight,
+                              title: 'Неделя',
+                              dateLabel: dateLabel,
                               weekType: weekType,
-                            );
-                          },
-                          childCount: days.length,
+                              gradient: _getHeaderGradient(weekType),
+                              isOffline: _isOffline,
+                            ),
+                          ),
                         ),
-                      ),
+                        SliverPadding(
+                          padding: const EdgeInsets.fromLTRB(0, 24, 0, 110),
+                          sliver: SliverList(
+                            delegate: SliverChildBuilderDelegate(
+                              (context, index) {
+                                final day = days[index];
+                                final building = _primaryBuilding(day.value);
+
+                                return DaySection(
+                                  title: day.key,
+                                  building: building,
+                                  lessons: day.value,
+                                  accentColor: _lessonAccent,
+                                  weekType: weekType,
+                                );
+                              },
+                              childCount: days.length,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
               ],
             ),
     );
@@ -216,7 +209,6 @@ class _ScheduleScreenState extends State {
   }
 }
 
-/// Делегат pinned-хедера: меняется только высота.
 class _HeightPinnedHeaderDelegate extends SliverPersistentHeaderDelegate {
   _HeightPinnedHeaderDelegate({
     required this.backgroundColor,
@@ -225,7 +217,7 @@ class _HeightPinnedHeaderDelegate extends SliverPersistentHeaderDelegate {
     required this.child,
   });
 
-  final Color backgroundColor; // оставлено, но фон не рисуем
+  final Color backgroundColor;
   final double maxHeight;
   final double minHeight;
   final Widget child;
@@ -250,7 +242,6 @@ class _HeightPinnedHeaderDelegate extends SliverPersistentHeaderDelegate {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          // Постепенный blur: от верха экрана до середины сжатой шапки
           Positioned(
             top: -MediaQuery.of(context).padding.top,
             left: -MediaQuery.of(context).padding.left,
@@ -283,8 +274,6 @@ class _HeightPinnedHeaderDelegate extends SliverPersistentHeaderDelegate {
   }
 }
 
-/// Плашка weekType и wifi_off двигаются плавно, а левый блок в mini центрируется по вертикали.
-/// Wifi в mini вычисляется от высоты плашки (чтобы не было наезда).
 class _CollapsibleWeekHeader extends StatelessWidget {
   const _CollapsibleWeekHeader({
     required this.maxHeight,
@@ -298,13 +287,10 @@ class _CollapsibleWeekHeader extends StatelessWidget {
 
   final double maxHeight;
   final double minHeight;
-
   final String title;
   final String dateLabel;
-
   final String weekType;
   final List<Color> gradient;
-
   final bool isOffline;
 
   @override
@@ -327,7 +313,6 @@ class _CollapsibleWeekHeader extends StatelessWidget {
         final pillPH = lerpDouble(14, 10, tCurved)!;
         final pillPV = lerpDouble(6, 4, tCurved)!;
 
-        // Те же отступы и структура, что в шапке «Сегодня» (_StaticOverviewHeader)
         final gapTitleDate = lerpDouble(4, 4, tCurved)!;
         final gapPillIcon = 10.0;
         final estimatedPillHeight = pillFont + (pillPV * 2) + 6;

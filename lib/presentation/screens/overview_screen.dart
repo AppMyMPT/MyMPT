@@ -15,16 +15,12 @@ import 'package:my_mpt/presentation/widgets/shared/break_indicator.dart';
 import 'package:my_mpt/presentation/widgets/shared/lesson_card.dart';
 import 'package:my_mpt/presentation/widgets/shared/location.dart';
 
-// ВАЖНО: берём тот же баннер, что и в Settings.
 import 'package:my_mpt/presentation/widgets/settings/info_notification.dart';
 
 class OverviewScreen extends StatefulWidget {
   const OverviewScreen({super.key, this.innerPageRequest, this.forcedPage});
 
-  /// 0 = Сегодня, 1 = Завтра
   final ValueNotifier<int>? innerPageRequest;
-
-  /// Когда задан — показываем только эту страницу (без внутреннего PageView). Для единого свайпа из main.
   final int? forcedPage;
 
   @override
@@ -43,11 +39,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
   List<Replacement> scheduleChanges = const [];
 
   bool isLoading = false;
-
-  /// true = показываем офлайн (когда пытались обновиться и не смогли, но кэш есть)
   bool isOffline = false;
-
-  /// чтобы авто-обновление (на входе) не спамило одним и тем же баннером
   bool _autoOfflineNotified = false;
 
   late final PageController pageController;
@@ -56,7 +48,6 @@ class _OverviewScreenState extends State<OverviewScreen> {
 
   int currentPageIndex = 0;
 
-  // --- карты: соответствие и открытие ---
   static const Map<String, String> _buildingToAddress = {
     'нежинская': 'Нежинская улица, 7, Москва',
     'нахимовский': 'Нахимовский проспект, 21, Москва',
@@ -69,13 +60,9 @@ class _OverviewScreenState extends State<OverviewScreen> {
 
   Uri _mapsUriForAddress(String address) {
     final q = Uri.encodeComponent(address);
-
     if (Platform.isAndroid) {
-      // geo: URI обычно открывается через chooser карт, если нет дефолта
       return Uri.parse('geo:0,0?q=$q');
     }
-
-    // iOS/прочие: универсальная ссылка; система сама решит, чем открыть
     return Uri.parse('https://www.google.com/maps/search/?api=1&query=$q');
   }
 
@@ -83,9 +70,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
     final key = label.trim().toLowerCase();
     final address = _buildingToAddress[key];
     if (address == null) return;
-
     final uri = _mapsUriForAddress(address);
-
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!ok && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -93,12 +78,10 @@ class _OverviewScreenState extends State<OverviewScreen> {
       );
     }
   }
-  // --- /карты ---
 
   @override
   void initState() {
     super.initState();
-
     final useInnerPageView = widget.forcedPage == null;
     _ownsPageRequest = useInnerPageView && widget.innerPageRequest == null;
     _pageRequest = widget.innerPageRequest ?? ValueNotifier<int>(0);
@@ -156,8 +139,6 @@ class _OverviewScreenState extends State<OverviewScreen> {
   }
 
   void _showOfflineBanner({required bool userInitiated}) {
-    // Показываем при ручном обновлении всегда.
-    // При авто — только один раз за жизненный цикл экрана.
     if (!userInitiated && _autoOfflineNotified) return;
     _autoOfflineNotified = true;
 
@@ -192,40 +173,29 @@ class _OverviewScreenState extends State<OverviewScreen> {
       setState(() {
         todayScheduleData = scheduleResults[0];
         tomorrowScheduleData = scheduleResults[1];
-
-        // Если была попытка обновления и она провалилась — офлайн.
-        // Если не было попытки — берём флаг из репозитория.
         isOffline = refreshOk == null ? repository.isOfflineBadgeVisible : !refreshOk;
-
         if (showLoader) isLoading = false;
       });
 
-      // Если пытались обновиться, но нет сети — показываем баннер как в Settings.
       if (forceRefresh && refreshOk == false) {
         _showOfflineBanner(userInitiated: userInitiated);
       }
     } catch (_) {
       if (!mounted) return;
       if (showLoader) setState(() => isLoading = false);
-
-      // Оставляем общий фолбэк на неожиданные ошибки.
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Ошибка загрузки расписания')),
       );
       return;
     }
 
-    // Изменения/уведомления — отдельным блоком, чтобы не ломать показ расписания.
     try {
       final loadedChanges = await changesRepository.getScheduleChanges();
       if (!mounted) return;
-
       setState(() {
         scheduleChanges = loadedChanges;
       });
-    } catch (_) {
-      // ignore
-    }
+    } catch (_) {}
   }
 
   List<Color> getHeaderGradient(String weekType) {
@@ -249,6 +219,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
       return Scaffold(
         backgroundColor: backgroundColor,
         body: SafeArea(
+          bottom: false,
           child: const Center(child: CircularProgressIndicator(color: Colors.white)),
         ),
       );
@@ -260,6 +231,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
       return Scaffold(
         backgroundColor: backgroundColor,
         body: SafeArea(
+          bottom: false,
           child: RefreshIndicator(
             onRefresh: () => fetchScheduleData(forceRefresh: true, userInitiated: true),
             color: Colors.white,
@@ -272,6 +244,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
     return Scaffold(
       backgroundColor: backgroundColor,
       body: SafeArea(
+        bottom: false,
         child: Stack(
           children: [
             PageView(
@@ -294,7 +267,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
               ],
             ),
             Positioned(
-              bottom: 10,
+              bottom: 60, // Сдвигаем индикатор страниц чуть выше над навбаром
               left: 0,
               right: 0,
               child: PageIndicator(currentPageIndex: currentPageIndex),
@@ -342,7 +315,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
           ),
         ),
         SliverPadding(
-          padding: const EdgeInsets.symmetric(vertical: 24),
+          padding: const EdgeInsets.fromLTRB(0, 24, 0, 110),
           sliver: SliverToBoxAdapter(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -713,10 +686,8 @@ class ScheduleChangesResult {
   ScheduleChangesResult({required this.schedule, required this.hasBuildingOverride});
 }
 
-/// Высота шапки как на странице «Неделя» (schedule_screen).
 const _overviewHeaderHeight = 176.0;
 
-/// Шапка обзора (числитель/знаменатель): прокручивается вместе с контентом.
 class _StaticOverviewHeader extends StatelessWidget {
   const _StaticOverviewHeader({
     required this.title,

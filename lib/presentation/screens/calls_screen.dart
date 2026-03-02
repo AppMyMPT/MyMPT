@@ -5,16 +5,9 @@ import 'package:my_mpt/core/utils/date_formatter.dart';
 import 'package:my_mpt/presentation/widgets/calls/calls_header.dart';
 import 'package:my_mpt/presentation/widgets/calls/call_timeline_tile.dart';
 
-/// Экран отображения расписания звонков техникума
-///
-/// Этот экран показывает расписание звонков на учебный день
-/// с детализацией по периодам и времени начала/окончания каждого звона
-
-/// Основной экран расписания звонков
 class CallsScreen extends StatelessWidget {
   const CallsScreen({super.key});
 
-  /// Цвет фона экрана
   static const _backgroundColor = Color(0xFF000000);
 
   static const _numeratorColor = Color(0xFFFF8C00);
@@ -29,8 +22,9 @@ class CallsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: _backgroundColor,
       body: SafeArea(
+        bottom: false,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

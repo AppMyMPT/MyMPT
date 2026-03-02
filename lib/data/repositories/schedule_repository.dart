@@ -12,6 +12,8 @@ class ScheduleRepository implements ScheduleRepositoryInterface {
   final ScheduleCacheDataSource _cacheDataSource = ScheduleCacheDataSource();
 
   static const String _selectedGroupKey = 'selected_group';
+  static const String _selectedRoleKey = 'selected_role';
+  static const String _teacherNameKey = 'teacher';
 
   Map<String, List<Schedule>>? _cachedWeeklySchedule;
   List<Schedule>? _cachedTodaySchedule;
@@ -130,7 +132,6 @@ class ScheduleRepository implements ScheduleRepositoryInterface {
         final ok = await _refreshAllDataInternal(forceRefresh: forceRefresh);
         completer.complete(ok);
       } catch (_) {
-        // На всякий: internal уже сам выставляет флаги/тайминги, но не роняем Future.
         completer.complete(false);
       } finally {
         _refreshInFlight = null;
@@ -142,16 +143,29 @@ class ScheduleRepository implements ScheduleRepositoryInterface {
 
   Future<bool> _refreshAllDataInternal({required bool forceRefresh}) async {
     try {
-      final groupCode = await _getSelectedGroupCode();
-      if (groupCode.isEmpty) {
+      final prefs = await SharedPreferences.getInstance();
+      final role = prefs.getString(_selectedRoleKey) ?? 'student';
+      
+      String targetName = '';
+      bool isTeacher = false;
+      
+      if (role == 'student') {
+         targetName = await _getSelectedGroupCode();
+      } else {
+         targetName = prefs.getString(_teacherNameKey) ?? '';
+         isTeacher = true;
+      }
+
+      if (targetName.isEmpty) {
         await _clearCache(); // тут реально нечего показывать
         _lastRefreshSucceeded = false;
         return false;
       }
 
       final parsedSchedule = await _remoteDatasource.fetchWeeklySchedule(
-        groupCode,
+        targetName,
         forceRefresh: forceRefresh,
+        isTeacher: isTeacher
       );
 
       final Map<String, List<Schedule>> weeklySchedule = {};
@@ -181,9 +195,8 @@ class ScheduleRepository implements ScheduleRepositoryInterface {
       await _cacheDataSource.save(
         ScheduleCache(
           weeklySchedule: _cachedWeeklySchedule ?? {},
-          // В кэш больше не полагаемся на today/tomorrow, но модель оставляем совместимой.
-          todaySchedule: const [],
-          tomorrowSchedule: const [],
+          todaySchedule: _cachedTodaySchedule ?? [],
+          tomorrowSchedule: _cachedTomorrowSchedule ?? [],
           lastUpdate: _lastUpdate!,
         ),
       );

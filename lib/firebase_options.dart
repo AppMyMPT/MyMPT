@@ -59,11 +59,11 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyDnD-TCNdZm01MTQaoHNLQAeMLzwIWUQzk',
-    appId: '1:953723484494:ios:d507497935f1b2383d061f',
+    appId: '1:953723484494:ios:7e10be1850e2c5453d061f',
     messagingSenderId: '953723484494',
     projectId: 'mympt-fc53d',
     storageBucket: 'mympt-fc53d.firebasestorage.app',
-    iosBundleId: 'com.example.myMpt',
+    iosBundleId: 'ru.merrcurys.my-mpt',
   );
 
 }

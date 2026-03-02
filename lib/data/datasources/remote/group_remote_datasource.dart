@@ -51,7 +51,7 @@ class GroupRemoteDatasource {
     try {
       if (!forceRefresh) {
         final cached = await _getCachedGroups(null);
-        if (cached != null) return cached;
+        if (cached != null && cached.isNotEmpty) return cached;
       }
 
       final response = await _client
@@ -75,10 +75,19 @@ class GroupRemoteDatasource {
       );
 
       final groups = decoded.map(Group.fromJson).toList();
+      
+      if (groups.isEmpty) {
+        throw Exception('Сайт МПТ не вернул список групп.');
+      }
 
       await _saveCachedGroups(null, groups);
       return groups;
     } catch (e) {
+      // Если принудительное обновление не удалось, пробуем отдать кэш, даже если он старый
+      final fallbackCache = await _getCachedGroups(null, ignoreTtl: true);
+      if (fallbackCache != null && fallbackCache.isNotEmpty) {
+        return fallbackCache;
+      }
       throw Exception('Ошибка при парсинге групп: $e');
     }
   }
@@ -90,7 +99,7 @@ class GroupRemoteDatasource {
     try {
       if (!forceRefresh) {
         final cached = await _getCachedGroups(specialtyFilter);
-        if (cached != null) return cached;
+        if (cached != null && cached.isNotEmpty) return cached;
       }
 
       final response = await _client
@@ -108,8 +117,6 @@ class GroupRemoteDatasource {
 
       final html = utf8.decode(response.bodyBytes);
 
-      // Важно: не меняем логику извлечения — всё делает GroupParser,
-      // но переносим парсинг в isolate.
       final decoded = await compute(
         _parseGroupsIsolate,
         {'html': html, 'specialtyFilter': specialtyFilter},
@@ -117,16 +124,23 @@ class GroupRemoteDatasource {
 
       final groups = decoded.map(Group.fromJson).toList();
 
+      if (groups.isEmpty) {
+        throw Exception('Сайт МПТ не вернул список групп для специальности "$specialtyFilter".');
+      }
+
       await _saveCachedGroups(specialtyFilter, groups);
       return groups;
     } catch (e) {
-      throw Exception(
-        'Ошибка при парсинге групп для специальности "$specialtyFilter": $e',
-      );
+      // Если принудительное обновление не удалось, пробуем отдать кэш
+      final fallbackCache = await _getCachedGroups(specialtyFilter, ignoreTtl: true);
+      if (fallbackCache != null && fallbackCache.isNotEmpty) {
+        return fallbackCache;
+      }
+      throw Exception('Ошибка при парсинге групп для специальности "$specialtyFilter": $e');
     }
   }
 
-  Future<List<Group>?> _getCachedGroups(String? specialtyFilter) async {
+  Future<List<Group>?> _getCachedGroups(String? specialtyFilter, {bool ignoreTtl = false}) async {
     try {
       final prefs = await SharedPreferences.getInstance();
 
@@ -144,16 +158,21 @@ class GroupRemoteDatasource {
         final cacheTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
         final age = DateTime.now().difference(cacheTime);
 
-        if (age < _cacheTtl) {
+        if (ignoreTtl || age < _cacheTtl) {
           final List<dynamic> decoded = jsonDecode(cachedJson);
-          return decoded
+          final result = decoded
               .map(
                 (json) => Group.fromJson(json as Map<String, dynamic>),
               )
               .toList();
+              
+          if (result.isNotEmpty) return result;
         } else {
-          await prefs.remove(cacheKey);
-          await prefs.remove(timestampKey);
+          // Удаляем только если TTL истек и мы не игнорируем TTL (во время обычной загрузки)
+          if (!ignoreTtl) {
+            await prefs.remove(cacheKey);
+            await prefs.remove(timestampKey);
+          }
         }
       }
     } catch (_) {}

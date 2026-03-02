@@ -1,13 +1,17 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:native_glass_navbar/native_glass_navbar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:my_mpt/firebase_options.dart';
 import 'package:my_mpt/core/services/fcm_firestore_service.dart';
 import 'package:my_mpt/core/services/notification_service.dart';
 import 'package:my_mpt/core/services/rustore_update_ui.dart';
+import 'package:my_mpt/core/utils/date_formatter.dart';
 
 import 'package:my_mpt/presentation/screens/calls_screen.dart';
 import 'package:my_mpt/presentation/screens/overview_screen.dart';
@@ -19,19 +23,25 @@ import 'package:my_mpt/presentation/screens/welcome_screen.dart';
 Future<void> main() async {
   runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
+
+    // Инициализируем Firebase
     await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-    FcmFirestoreService.registerBackgroundHandler();
-    final notificationService = NotificationService();
-    await notificationService.initialize();
-    final fcmService = FcmFirestoreService();
-    await fcmService.initialize();
-    await fcmService.syncTokenWithGroup();
+    if (!kIsWeb) {
+      FcmFirestoreService.registerBackgroundHandler();
+      final notificationService = NotificationService();
+      await notificationService.initialize();
+      final fcmService = FcmFirestoreService();
+      await fcmService.initialize();
+      await fcmService.syncTokenWithGroup();
+    }
 
     runApp(const MyApp());
   }, (e, st) {
-    // debugPrint('Uncaught: $e');
-    // debugPrintStack(stackTrace: st);
+    if (kDebugMode) {
+      print('Uncaught error: $e');
+      print(st);
+    }
   });
 }
 
@@ -87,6 +97,20 @@ class MyApp extends StatelessWidget {
   }
 }
 
+class _NavItemData {
+  final IconData icon;
+  final IconData selectedIcon;
+  final String label;
+  final String sfSymbol;
+
+  const _NavItemData({
+    required this.icon,
+    required this.selectedIcon,
+    required this.label,
+    required this.sfSymbol,
+  });
+}
+
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
@@ -95,17 +119,13 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  /// Текущая страница PageView: 0=Сегодня, 1=Завтра, 2=Неделя, 3=Звонки, 4=Настройки
   int _currentIndex = 0;
-
-  /// PageController для переключения без анимации при нажатии на bottom nav
   late final PageController _pageController;
 
   bool _isFirstLaunch = true;
   bool _isLoading = true;
   bool _updateChecked = false;
 
-  /// 5 страниц: Сегодня, Завтра, Неделя, Звонки, Настройки — единый PageView
   late final List<Widget> _screens = <Widget>[
     OverviewScreen(forcedPage: 0),
     OverviewScreen(forcedPage: 1),
@@ -115,10 +135,30 @@ class _MainScreenState extends State<MainScreen> {
   ];
 
   final List<_NavItemData> _navItems = const [
-    _NavItemData(icon: Icons.flash_on_outlined, label: 'Обзор'),
-    _NavItemData(icon: Icons.view_week_outlined, label: 'Неделя'),
-    _NavItemData(icon: Icons.notifications_none_outlined, label: 'Звонки'),
-    _NavItemData(icon: Icons.settings_outlined, label: 'Настройки'),
+    _NavItemData(
+      icon: Icons.flash_on_outlined,
+      selectedIcon: Icons.flash_on,
+      label: 'Обзор',
+      sfSymbol: 'bolt.fill',
+    ),
+    _NavItemData(
+      icon: Icons.view_week_outlined,
+      selectedIcon: Icons.view_week,
+      label: 'Неделя',
+      sfSymbol: 'calendar',
+    ),
+    _NavItemData(
+      icon: Icons.notifications_none_outlined,
+      selectedIcon: Icons.notifications,
+      label: 'Звонки',
+      sfSymbol: 'bell',
+    ),
+    _NavItemData(
+      icon: Icons.settings_outlined,
+      selectedIcon: Icons.settings,
+      label: 'Настройки',
+      sfSymbol: 'gearshape',
+    ),
   ];
 
   @override
@@ -149,7 +189,6 @@ class _MainScreenState extends State<MainScreen> {
     });
   }
 
-  /// Переход на страницу: при нажатии на nav — мгновенный jump, без прокрутки смежных
   void _goToPage(int index) {
     if (index < 0 || index >= _screens.length) return;
     if (index == _currentIndex) return;
@@ -182,8 +221,75 @@ class _MainScreenState extends State<MainScreen> {
     if (!_updateChecked) {
       _updateChecked = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        RuStoreUpdateUi.checkAndRunDeferredUpdate();
+        if (!kIsWeb) {
+          RuStoreUpdateUi.checkAndRunDeferredUpdate();
+        }
       });
+    }
+
+    final int selectedNavIndex = _currentIndex <= 1 ? 0 : _currentIndex - 1;
+
+    final isNumerator = DateFormatter.getWeekType(DateTime.now()) == 'Числитель';
+    final Color activeColor =
+        isNumerator ? const Color(0xFFFF8C00) : const Color(0xFF42A5F5);
+        
+    final bool isIOS = !kIsWeb && Platform.isIOS;
+    // Уменьшаем отступ для iOS (60 вместо 100), чтобы кружочки страниц были ближе к навбару
+    final double indicatorBottomOffset = isIOS ? 60 : (80 + 10); 
+
+    Widget? bottomNavigationBar;
+    
+    if (isIOS) {
+      bottomNavigationBar = NativeGlassNavBar(
+        currentIndex: selectedNavIndex,
+        tintColor: activeColor,
+        onTap: (index) {
+          if (index == 0) {
+            _goToPage(0);
+          } else {
+            _goToPage(index + 1);
+          }
+        },
+        tabs: [
+          for (final item in _navItems)
+            NativeGlassNavBarItem(
+              label: item.label,
+              symbol: item.sfSymbol,
+            ),
+        ],
+      );
+    } else {
+      // Стандартный Android Material 3 NavigationBar (до всяких "glass" экспериментов)
+      bottomNavigationBar = ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        child: Theme(
+          data: Theme.of(context).copyWith(
+            navigationBarTheme: Theme.of(context).navigationBarTheme.copyWith(
+              // Делаем цвет выделения динамическим (синий/оранжевый) с прозрачностью
+              indicatorColor: activeColor.withOpacity(0.25),
+            ),
+          ),
+          child: NavigationBar(
+            selectedIndex: selectedNavIndex,
+            onDestinationSelected: (index) {
+              if (index == 0) {
+                _goToPage(0);
+              } else {
+                _goToPage(index + 1);
+              }
+            },
+            surfaceTintColor: Colors.transparent,
+            destinations: [
+              for (final item in _navItems)
+                NavigationDestination(
+                  icon: Icon(item.icon),
+                  selectedIcon: Icon(item.selectedIcon, color: activeColor),
+                  label: item.label,
+                ),
+            ],
+          ),
+        ),
+      );
     }
 
     return Scaffold(
@@ -201,35 +307,14 @@ class _MainScreenState extends State<MainScreen> {
             Positioned(
               left: 0,
               right: 0,
-              bottom: MediaQuery.of(context).padding.bottom + 80 + 10,
+              bottom: MediaQuery.of(context).padding.bottom + indicatorBottomOffset,
               child: IgnorePointer(
                 child: PageIndicator(currentPageIndex: _currentIndex),
               ),
             ),
         ],
       ),
-      bottomNavigationBar: ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        child: NavigationBar(
-          selectedIndex: _currentIndex <= 1 ? 0 : _currentIndex - 1,
-          onDestinationSelected: (index) {
-            if (index == 0) _goToPage(0);
-            else _goToPage(index + 1);
-          },
-          surfaceTintColor: Colors.transparent,
-          destinations: [
-            for (final item in _navItems)
-              NavigationDestination(icon: Icon(item.icon), label: item.label),
-          ],
-        ),
-      ),
+      bottomNavigationBar: bottomNavigationBar,
     );
   }
-}
-
-class _NavItemData {
-  final IconData icon;
-  final String label;
-
-  const _NavItemData({required this.icon, required this.label});
 }

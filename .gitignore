@@ -44,6 +44,15 @@ mpt-replacement-service/firebase-service-account.json
 mpt-replacement-service/data/
 mpt-replacement-service/.env
 mpt-replacement-service/node_modules/
+replacement-vps/firebase-service-account.json
+replacement-vps/data/
+replacement-vps/.env
+replacement-vps/.env.*
+replacement-vps/node_modules/
+
+# Firebase CLI (логи отладки)
+firebase-debug.log
+firebase-debug.*.log
 
 # Android Studio will place build artifacts here
 /android/app/debug
