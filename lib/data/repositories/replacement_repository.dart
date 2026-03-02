@@ -8,11 +8,20 @@ class ReplacementRepository implements ReplacementRepositoryInterface {
       ReplacementRemoteDatasource();
 
   static const String _selectedGroupKey = 'selected_group';
+  static const String _selectedRoleKey = 'selected_role';
 
   /// Получить замены в расписании для конкретной группы
   @override
   Future<List<Replacement>> getScheduleChanges() async {
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final role = prefs.getString(_selectedRoleKey) ?? 'student';
+
+      // Если выбрана роль преподавателя, замены для группы не загружаем.
+      if (role != 'student') {
+        return [];
+      }
+
       // Здесь нужно получить выбранную группу из настроек
       final groupCode = await _getSelectedGroupCode();
 
