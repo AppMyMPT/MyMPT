@@ -65,8 +65,8 @@ class TeacherParser {
               final parts = raw.split(',');
               for (var part in parts) {
                 final cleaned = part.trim();
-                if (cleaned.length > 5 && cleaned.contains('.')) {
-                  // Пытаемся просто добавить как есть, если похоже на ФИО
+                // Фильтруем откровенный мусор: должно содержать точки, не должно содержать цифр, не должно быть слишком длинным (например, фразы)
+                if (cleaned.length > 5 && cleaned.length < 40 && cleaned.contains('.') && !RegExp(r'\d').hasMatch(cleaned)) {
                   result.add(cleaned);
                 }
               }

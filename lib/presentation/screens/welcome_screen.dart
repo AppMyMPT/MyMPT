@@ -49,7 +49,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   static const _selectedRoleKey = 'selected_role';
   static const _selectedSpecialtyKey = 'selected_specialty';
   static const _selectedGroupKey = 'selected_group';
-  static const _selectedTeacherKey = 'selected_teacher';
+  // В ScheduleRepository используется ключ 'teacher', а не 'selected_teacher'
+  static const _teacherNameKey = 'teacher'; 
   static const _firstLaunchKey = 'first_launch';
 
   late SpecialtyRepositoryInterface _specialtyRepository;
@@ -191,7 +192,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       await prefs.setString(_selectedGroupKey, _selectedGroup!.code);
       
       // Сбрасываем преподавателя, если он был выбран
-      await prefs.remove(_selectedTeacherKey);
+      await prefs.remove(_teacherNameKey);
 
       try {
         await FcmFirestoreService().syncTokenWithGroup();
@@ -206,7 +207,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         }
         return;
       }
-      await prefs.setString(_selectedTeacherKey, _selectedTeacher!.teacherName);
+      await prefs.setString(_teacherNameKey, _selectedTeacher!.teacherName);
       
       // Сбрасываем группу, если она была выбрана
       await prefs.remove(_selectedSpecialtyKey);
