@@ -9,9 +9,24 @@ class ScheduleTeacherParser {
     final document = html_parser.parse(html);
     final schedule = <String, List<Lesson>>{};
 
-    final teacherNameParts = teacherName.split(' ');
-    final lastName = teacherNameParts.last.toLowerCase();
-    final initials = teacherNameParts.sublist(0, teacherNameParts.length - 1).join(' ').toLowerCase();
+    // Очищаем и разбиваем имя преподавателя на части
+    final parts = teacherName.trim().split(RegExp(r'\s+')).where((e) => e.isNotEmpty).toList();
+    if (parts.isEmpty) return {};
+
+    final lastName = parts.first.toLowerCase();
+    
+    // Формируем "нормализованные" инициалы. Например: "И. И." -> "и.и." или "Иван Иванович" -> "и.и."
+    String initialsNormalized = '';
+    if (parts.length >= 2) {
+      final rest = parts.sublist(1).join(' ').toLowerCase();
+
+      if (rest.contains('.')) {
+        initialsNormalized = rest.replaceAll(' ', ''); 
+      } else {
+        final initials = parts.sublist(1).take(2).map((p) => p.isNotEmpty ? p[0].toLowerCase() : '').where((c) => c.isNotEmpty).toList();
+        initialsNormalized = initials.map((c) => '$c.').join(); 
+      }
+    }
 
     final tabPanels = document.querySelectorAll('[role="tabpanel"]');
     
@@ -95,7 +110,7 @@ class ScheduleTeacherParser {
 
           if (subjectLabels.isEmpty || teacherLabels.isEmpty) {
             final cellTeacherText = teacherCell.text.toLowerCase();
-            if (_isTeacherMatch(cellTeacherText, lastName, initials)) {
+            if (_isTeacherMatch(cellTeacherText, lastName, initialsNormalized)) {
                final building = h4.querySelector('span')?.text.trim() ?? '';
                final subject = subjectCell.text.trim();
 
@@ -114,7 +129,7 @@ class ScheduleTeacherParser {
              final count = _pairedLabelsCount(subjectLabels, teacherLabels);
              for (var i = 0; i < count; i++) {
                 final cellTeacherText = teacherLabels[i].text.toLowerCase();
-                if (_isTeacherMatch(cellTeacherText, lastName, initials)) {
+                if (_isTeacherMatch(cellTeacherText, lastName, initialsNormalized)) {
                    final building = h4.querySelector('span')?.text.trim() ?? '';
                    final subject = subjectLabels[i].text.trim();
                    final lessonType = _resolveLessonType(subjectLabels[i]);
@@ -139,8 +154,8 @@ class ScheduleTeacherParser {
     return _mergeTeacherLessons(schedule);
   }
 
-  bool _isTeacherMatch(String cellText, String lastName, String initials) {
-    // 1. Поиск точного совпадения фамилии (с границами)
+  bool _isTeacherMatch(String cellText, String lastName, String initialsNormalized) {
+    // Поиск точного совпадения фамилии (с границами)
     // Используем [^а-яёa-z] чтобы исключить совпадения внутри других слов
     final nameRegex = RegExp(r'(^|\s|[^а-яёa-z])' + RegExp.escape(lastName) + r'($|\s|[^а-яёa-z])', caseSensitive: false);
     
@@ -148,12 +163,10 @@ class ScheduleTeacherParser {
       return false; // Фамилии нет — точно не он
     }
 
-    final cleanInitials = initials.replaceAll(' ', '');
-    
-    if (cleanInitials.isEmpty) return true;
+    if (initialsNormalized.isEmpty) return true;
     if (!cellText.contains('.')) return true;
 
-    return cellText.replaceAll(' ', '').contains(cleanInitials);
+    return cellText.replaceAll(' ', '').contains(initialsNormalized);
   }
 
   int _pairedLabelsCount(List<Element> subjects, List<Element> teachers) {
