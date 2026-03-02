@@ -1,11 +1,10 @@
 import 'dart:async';
 import 'dart:io' show Platform;
+import 'dart:ui';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:liquid_navbar/liquid_navbar.dart';
 import 'package:native_glass_navbar/native_glass_navbar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -38,11 +37,7 @@ Future<void> main() async {
       await fcmService.syncTokenWithGroup();
     }
 
-    runApp(
-      const ProviderScope(
-        child: MyApp(),
-      ),
-    );
+    runApp(const MyApp());
   }, (e, st) {
     if (kDebugMode) {
       print('Uncaught error: $e');
@@ -217,44 +212,13 @@ class _MainScreenState extends State<MainScreen> {
     final int selectedNavIndex = _currentIndex <= 1 ? 0 : _currentIndex - 1;
 
     final isNumerator = DateFormatter.getWeekType(DateTime.now()) == 'Числитель';
+    // Оставляем оранжевый цвет для числителя, как просил ранее
     final Color activeColor =
         isNumerator ? const Color(0xFFFF8C00) : const Color(0xFF42A5F5);
         
     final bool isIOS = !kIsWeb && Platform.isIOS;
     final double indicatorBottomOffset = isIOS ? 100 : 80;
 
-    // Для Android используем BottomNavScaffold из liquid_navbar
-    if (!kIsWeb && Platform.isAndroid) {
-      return Scaffold(
-        extendBody: true,
-        body: Stack(
-          children: [
-            BottomNavScaffold(
-              pages: [
-                _screens[0], // Обзор
-                _screens[2], // Неделя
-                _screens[3], // Звонки
-                _screens[4], // Настройки
-              ],
-              icons: _navItems.map((item) => Icon(item.icon)).toList(),
-              labels: _navItems.map((item) => item.label).toList(),
-              navbarHeight: 70,
-              indicatorWidth: 70,
-              bottomPadding: 8,
-              horizontalPadding: 24,
-              selectedColor: activeColor,
-              unselectedColor: Colors.grey.shade400,
-            ),
-            // Индикатор страниц "Сегодня / Завтра" нужен только на экране "Обзор"
-            // Но в liquid_navbar страницы сменяются через Riverpod, 
-            // так что для простоты покажем его просто поверх всего. 
-            // Идеально было бы связать его с состоянием навбара.
-          ],
-        ),
-      );
-    }
-
-    // Для iOS оставляем NativeGlassNavBar (так как он идеально повторяет iOS-стиль)
     return Scaffold(
       extendBody: true,
       body: Stack(
@@ -294,7 +258,151 @@ class _MainScreenState extends State<MainScreen> {
               symbol: item.sfSymbol,
             ),
         ],
+        // Возвращаем старый кастомный fallback для Android
+        fallback: _PillFallbackNavBar(
+          items: _navItems,
+          selectedIndex: selectedNavIndex,
+          activeColor: activeColor,
+          onTap: (index) {
+            if (index == 0) {
+              _goToPage(0);
+            } else {
+              _goToPage(index + 1);
+            }
+          },
+        ),
       ),
     );
+  }
+}
+
+class _PillFallbackNavBar extends StatelessWidget {
+  final List<_NavItemData> items;
+  final int selectedIndex;
+  final Color activeColor;
+  final ValueChanged<int> onTap;
+
+  const _PillFallbackNavBar({
+    required this.items,
+    required this.selectedIndex,
+    required this.activeColor,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isIOS = !kIsWeb && Platform.isIOS;
+    
+    Widget navBarContent = Padding(
+      // Для iOS делаем отступ снизу 16, для Android - 8 (прижимаем к низу)
+      padding: EdgeInsets.only(
+        left: 24.0, 
+        right: 24.0, 
+        top: 16.0, 
+        bottom: isIOS ? 16.0 : 8.0
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(35),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.3),
+              blurRadius: 15,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(35),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 25.0, sigmaY: 25.0),
+            child: Container(
+              height: 70,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.5),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.2),
+                  width: 1.5,
+                ),
+                borderRadius: BorderRadius.circular(35),
+              ),
+              child: Stack(
+                children: [
+                  AnimatedPositioned(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeOutCubic,
+                    left: _calculateIndicatorPosition(selectedIndex, context),
+                    top: 6,
+                    bottom: 6,
+                    width: _calculateIndicatorWidth(context),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: activeColor.withOpacity(0.25),
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                    ),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: List.generate(items.length, (index) {
+                      final isSelected = selectedIndex == index;
+                      return Expanded(
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () => onTap(index),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                isSelected
+                                    ? items[index].selectedIcon
+                                    : items[index].icon,
+                                color: isSelected
+                                    ? activeColor
+                                    : const Color(0xFF4A3525),
+                                size: 26,
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                items[index].label,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: isSelected
+                                      ? FontWeight.w600
+                                      : FontWeight.w500,
+                                  color: isSelected
+                                      ? activeColor
+                                      : const Color(0xFF4A3525),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    if (isIOS) {
+      return SafeArea(child: navBarContent);
+    } 
+    
+    return navBarContent;
+  }
+
+  double _calculateIndicatorWidth(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final availableWidth = screenWidth - 48;
+    return availableWidth / items.length;
+  }
+
+  double _calculateIndicatorPosition(int index, BuildContext context) {
+    return index * _calculateIndicatorWidth(context);
   }
 }
