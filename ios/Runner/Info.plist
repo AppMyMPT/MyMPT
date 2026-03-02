@@ -48,7 +48,7 @@
 	 <key>UIBackgroundModes</key>
   <array>
     <string>fetch</string>
-    <!-- если когда‑нибудь понадобится что-то ещё в фоне, можно добавить другие режимы -->
+    <string>remote-notification</string>
   </array>
 
   <key>BGTaskSchedulerPermittedIdentifiers</key>

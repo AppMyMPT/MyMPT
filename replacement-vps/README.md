@@ -26,7 +26,7 @@
 docker compose up -d --build
 ```
 
-Сервис будет проверять замены **каждый час в 0 минут** (по времени контейнера, у нас `TZ=Europe/Moscow`).
+Сервис будет проверять замены **каждый час** (по времени контейнера, у нас `TZ=Europe/Moscow`).
 
 Логи:
 
@@ -50,6 +50,9 @@ docker compose down
 | `CRON_SCHEDULE` | Расписание cron (каждый час) | `0 * * * *` |
 | `RUN_ONCE` | Если `1` — одна проверка и выход (для ручного/cron хоста) | не задано |
 | `TZ` | Часовой пояс | `Europe/Moscow` в docker-compose |
+| `LOG_LEVEL` | Уровень логов: `debug`, `info`, `warn`, `error` | `info` |
+| `LOG_DIR` | Папка для лог-файла | `{DATA_DIR}/logs` |
+| `LOG_FILE` | Полный путь к файлу логов (если задан — пишем в файл) | `{LOG_DIR}/service.log` |
 
 ## Запуск одной проверки (без cron внутри контейнера)
 
@@ -75,6 +78,11 @@ docker run -d --restart unless-stopped \
   -e TZ=Europe/Moscow \
   mpt-replacement
 ```
+
+## Логирование
+
+- Логи пишутся в stdout (видны в `docker compose logs`) и дополнительно в файл `data/logs/service.log` (или `LOG_DIR`/`LOG_FILE`).
+- Уровень: `LOG_LEVEL=debug` для подробного вывода (парсинг, загрузка состояния, группы без изменений).
 
 ## Данные
 
