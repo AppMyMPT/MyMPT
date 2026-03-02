@@ -22,31 +22,41 @@ class ScheduleTeacherParser {
        final href = link.attributes['href'];
        if (href != null && href.startsWith('#')) {
           final tabId = href.substring(1);
-          // Берем текст из вкладки (обычно там как раз группа, например П50-1-23)
-          idToGroup[tabId] = _extractGroup(link.text.trim());
+          idToGroup[tabId] = link.text.trim();
        }
     }
 
     for (var tabPanel in tabPanels) {
-      final tabId = tabPanel.attributes['id'];
+      // Игнорируем родительские вкладки (например, вкладки специальностей),
+      // чтобы не парсить одни и те же таблицы дважды. Берем только самые вложенные.
+      if (tabPanel.querySelectorAll('[role="tabpanel"]').isNotEmpty) {
+        continue;
+      }
       
-      // Получаем название группы из вкладки. Специально не берем специальность из h2, 
-      // чтобы избежать длинных названий типа "09.02.07 Информационные системы..."
-      String currentGroup = tabId != null ? (idToGroup[tabId] ?? '') : '';
+      String currentGroup = '';
 
-      // Резервный вариант, если вкладки вдруг нет - попытаться вытащить именно группу из h2,
-      // но отрезав всё лишнее
-      if (currentGroup.isEmpty) {
-        final h2Headers = tabPanel.querySelectorAll('h2');
-        for (var h2 in h2Headers) {
-          final text = h2.text.trim();
-          if (text.startsWith('Расписание занятий для')) {
-            final fullText = text.replaceFirst('Расписание занятий для', '').trim();
-            currentGroup = _extractGroup(fullText);
-            break;
-          }
+      // Пытаемся найти "Группа П50-1-23" внутри панели
+      final headers = tabPanel.querySelectorAll('h2, h3');
+      for (var h in headers) {
+        final text = h.text.trim();
+        if (text.startsWith('Группа ')) {
+          currentGroup = text.replaceFirst('Группа ', '').trim();
+          break;
         }
       }
+
+      // Если не нашли, пробуем по ID вкладки
+      if (currentGroup.isEmpty) {
+        final tabId = tabPanel.attributes['id'];
+        currentGroup = tabId != null ? (idToGroup[tabId] ?? '') : '';
+      }
+
+      // На случай если каким-то образом попало "Расписание занятий для ..."
+      if (currentGroup.startsWith('Расписание занятий для ')) {
+        currentGroup = currentGroup.replaceFirst('Расписание занятий для ', '').trim();
+      }
+
+      if (currentGroup.isEmpty) continue;
 
       final tables = tabPanel.querySelectorAll('table.table');
 
@@ -129,28 +139,6 @@ class ScheduleTeacherParser {
     return _mergeTeacherLessons(schedule);
   }
 
-  /// Пытается вытащить только название группы (например, П50-1-23),
-  /// отбрасывая длинные названия специальностей.
-  String _extractGroup(String rawText) {
-    // Ищем паттерн группы: БуквыЦифры-Цифра-Цифры (например П50-1-23, ИСП-2-22, Р21-1)
-    // Поддерживает различные форматы групп МПТ
-    final groupRegex = RegExp(r'[А-Яа-яЁёA-Za-z0-9]+-\d+(?:-\d+)?');
-    final match = groupRegex.firstMatch(rawText);
-    
-    if (match != null) {
-      return match.group(0)!; // Возвращаем только саму группу
-    }
-    
-    // Если регулярка не нашла группу, просто берем первое слово 
-    // (обычно специальность идет дальше после пробелов/скобок)
-    // но если строка короткая (<15 символов), возвращаем целиком
-    if (rawText.length < 15) {
-      return rawText;
-    }
-    
-    return rawText.split(' ').first;
-  }
-
   bool _isTeacherMatch(String cellText, String lastName, String initials) {
     // 1. Поиск точного совпадения фамилии (с границами)
     // Используем [^а-яёa-z] чтобы исключить совпадения внутри других слов
@@ -162,15 +150,9 @@ class ScheduleTeacherParser {
 
     final cleanInitials = initials.replaceAll(' ', '');
     
-    // Если у искомого преподавателя нет инициалов (маловероятно, но бывает), 
-    // считаем, что совпало по фамилии.
     if (cleanInitials.isEmpty) return true;
-
-    // Если в ячейке вообще нет инициалов (например просто "Иванов" без И.И.),
-    // будем считать совпадением, так как фамилия совпала и нет противоречащих инициалов.
     if (!cellText.contains('.')) return true;
 
-    // Иначе проверяем, содержатся ли именно нужные инициалы в тексте ячейки.
     return cellText.replaceAll(' ', '').contains(cleanInitials);
   }
 
