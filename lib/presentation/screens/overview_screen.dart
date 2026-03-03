@@ -218,9 +218,9 @@ class _OverviewScreenState extends State<OverviewScreen> {
     if (isInitialLoading) {
       return Scaffold(
         backgroundColor: backgroundColor,
-        body: SafeArea(
+        body: const SafeArea(
           bottom: false,
-          child: const Center(child: CircularProgressIndicator(color: Colors.white)),
+          child: Center(child: CircularProgressIndicator(color: Colors.white)),
         ),
       );
     }
@@ -304,6 +304,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
     final canOpen = _canOpenBuilding(building);
 
     return CustomScrollView(
+      physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()), // Оптимизация для iOS
       slivers: [
         SliverToBoxAdapter(
           child: _StaticOverviewHeader(
@@ -380,7 +381,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
                               const SizedBox(height: 8),
                               const Text(
                                 'Нет запланированных занятий',
-                                style: TextStyle(fontSize: 16, color: Colors.white54),
+                                style: const TextStyle(fontSize: 16, color: Colors.white54),
                               ),
                             ],
                           ),
@@ -738,11 +739,12 @@ class _StaticOverviewHeader extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
+          // Уменьшено количество теней для оптимизации
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.45),
-              blurRadius: 30,
-              offset: const Offset(0, 18),
+              color: Colors.black.withValues(alpha: 0.3),
+              blurRadius: 15,
+              offset: const Offset(0, 8),
             ),
           ],
         ),

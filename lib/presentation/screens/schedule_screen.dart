@@ -1,4 +1,4 @@
-import 'dart:ui' show ImageFilter, lerpDouble;
+import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
 
@@ -122,9 +122,9 @@ class _ScheduleScreenState extends State {
     return Scaffold(
       backgroundColor: _backgroundColor,
       body: isInitialLoading
-          ? SafeArea(
+          ? const SafeArea(
               bottom: false,
-              child: const Center(child: CircularProgressIndicator(color: Colors.white)),
+              child: Center(child: CircularProgressIndicator(color: Colors.white)),
             )
           : Stack(
               children: [
@@ -134,6 +134,7 @@ class _ScheduleScreenState extends State {
                     onRefresh: () => _loadScheduleData(forceRefresh: true, userInitiated: true),
                     color: Colors.white,
                     child: CustomScrollView(
+                      physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()), // Оптимизация физики скролла
                       slivers: [
                         SliverPersistentHeader(
                           pinned: true,
@@ -238,38 +239,10 @@ class _HeightPinnedHeaderDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return SizedBox.expand(
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Positioned(
-            top: -MediaQuery.of(context).padding.top,
-            left: -MediaQuery.of(context).padding.left,
-            right: -MediaQuery.of(context).padding.right,
-            height: MediaQuery.of(context).padding.top + minHeight / 2,
-            child: ClipRect(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.black.withValues(alpha: 0.2),
-                        Colors.black.withValues(alpha: 0.06),
-                        Colors.transparent,
-                      ],
-                      stops: const [0.0, 0.5, 1.0],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          child,
-        ],
-      ),
+    // Убрали BackdropFilter и ClipRect (блюр), так как они вызывают сильный jank в Impeller iOS
+    return ColoredBox(
+      color: backgroundColor, // Статичный фон вместо блюра для производительности 120Hz
+      child: child,
     );
   }
 }
@@ -339,11 +312,12 @@ class _CollapsibleWeekHeader extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
+            // Уменьшено количество теней для оптимизации
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: lerpDouble(0.45, 0.2, tCurved)!),
-                blurRadius: lerpDouble(30, 12, tCurved)!,
-                offset: Offset(0, lerpDouble(18, 6, tCurved)!),
+                color: Colors.black.withValues(alpha: lerpDouble(0.3, 0.1, tCurved)!),
+                blurRadius: lerpDouble(15, 6, tCurved)!,
+                offset: Offset(0, lerpDouble(8, 2, tCurved)!),
               ),
             ],
           ),
