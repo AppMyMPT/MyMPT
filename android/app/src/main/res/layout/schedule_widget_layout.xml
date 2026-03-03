@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#2D2D30"
+    android:padding="12dp">
+
+    <!-- Шапка: заголовок + кнопка обновить -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="@drawable/bg_widget_card_round"
+        android:paddingLeft="10dp"
+        android:paddingRight="8dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp"
+        android:layout_marginBottom="8dp"
+        android:gravity="center_vertical">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/schedule_widget_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Пары на сегодня"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF" />
+
+            <TextView
+                android:id="@+id/schedule_widget_subtitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textSize="11sp"
+                android:textColor="#8E8E93"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:layout_marginTop="1dp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/schedule_widget_btn_reload"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:gravity="center"
+            android:includeFontPadding="false"
+            android:background="@drawable/bg_widget_btn_icon"
+            android:text="↻"
+            android:textSize="16sp"
+            android:textColor="#FFFFFF"
+            android:layout_gravity="center_vertical"
+            android:layout_marginLeft="6dp" />
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <ListView
+            android:id="@+id/schedule_widget_list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:divider="@android:color/transparent"
+            android:dividerHeight="4dp"
+            android:scrollbars="none"
+            android:background="@android:color/transparent" />
+
+        <TextView
+            android:id="@+id/schedule_widget_empty"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="Нет пар на сегодня"
+            android:textSize="13sp"
+            android:textColor="#8E8E93"
+            android:gravity="center"
+            android:padding="8dp"
+            android:visibility="gone" />
+    </FrameLayout>
+</LinearLayout>

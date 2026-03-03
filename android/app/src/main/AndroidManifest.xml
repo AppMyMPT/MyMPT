@@ -3,6 +3,8 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- Для автообновления виджета «Пары на сегодня» в 00:00 -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 
     <application
         android:label="Мой МПТ"
@@ -46,6 +48,25 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/calls_widget_info" />
         </receiver>
+
+        <!-- Виджет «Пары на сегодня» -->
+        <receiver
+            android:name="ru.merrcurys.my_mpt.ScheduleWidgetProvider"
+            android:exported="true"
+            android:label="Пары на сегодня">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="ru.merrcurys.my_mpt.SCHEDULE_WIDGET_REFRESH" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/schedule_widget_info" />
+        </receiver>
+
+        <service
+            android:name=".ScheduleWidgetService"
+            android:exported="false"
+            android:permission="android.permission.BIND_REMOTEVIEWS" />
 
     </application>
     <!-- Required to query activities that can process text, see:
