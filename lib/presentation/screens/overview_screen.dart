@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'package:my_mpt/core/services/schedule_widget_service.dart';
 import 'package:my_mpt/core/utils/calls_util.dart';
 import 'package:my_mpt/core/utils/date_formatter.dart';
 import 'package:my_mpt/core/utils/lesson_details_parser.dart';
@@ -202,6 +203,16 @@ class _OverviewScreenState extends State<OverviewScreen> {
         isOffline = refreshOk == null ? repository.isOfflineBadgeVisible : !refreshOk;
         if (showLoader) isLoading = false;
       });
+
+      if (Platform.isAndroid && _isStudent) {
+        final prefs = await SharedPreferences.getInstance();
+        final group = prefs.getString('selected_group') ?? '';
+        ScheduleWidgetService.updateWidget(
+          date: DateTime.now(),
+          groupName: group,
+          lessons: scheduleResults[0],
+        );
+      }
 
       if (forceRefresh && refreshOk == false) {
         _showOfflineBanner(userInitiated: userInitiated);
