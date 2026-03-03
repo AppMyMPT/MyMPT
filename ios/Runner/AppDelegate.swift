@@ -3,7 +3,6 @@ import UIKit
 import UserNotifications
 import Firebase
 import FirebaseMessaging
-import firebase_messaging 
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
@@ -48,12 +47,7 @@ import firebase_messaging
     // 1. Передаем в нативный Firebase
     Messaging.messaging().apnsToken = deviceToken
     
-    // 2. Передаем во Flutter-плагин firebase_messaging
-    FlutterFirebaseMessagingPlugin.sharedInstance().application(
-      application, 
-      didRegisterForRemoteNotificationsWithDeviceToken: deviceToken
-    )
-    
+    // 2. Вызов super передаст токен в Flutter Engine, который сам пробросит его в плагины
     super.application(application, didRegisterForRemoteNotificationsWithDeviceToken: deviceToken)
   }
 }
