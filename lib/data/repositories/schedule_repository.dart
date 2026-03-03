@@ -84,6 +84,37 @@ class ScheduleRepository implements ScheduleRepositoryInterface {
     return _cachedTomorrowSchedule ?? [];
   }
 
+  /// Получить расписание на неделю для указанного преподавателя (без смены текущей роли/кэша).
+  Future<Map<String, List<Schedule>>> getWeeklyScheduleForTeacher(String teacherName) async {
+    if (teacherName.trim().isEmpty) return {};
+    try {
+      final parsedSchedule = await _remoteDatasource.fetchWeeklySchedule(
+        teacherName.trim(),
+        forceRefresh: true,
+        isTeacher: true,
+      );
+      final Map<String, List<Schedule>> weeklySchedule = {};
+      parsedSchedule.forEach((day, lessons) {
+        weeklySchedule[day] = lessons.map((lesson) {
+          return Schedule(
+            id: '${day}_${lesson.number}',
+            number: lesson.number,
+            subject: lesson.subject,
+            teacher: lesson.teacher,
+            startTime: lesson.startTime,
+            endTime: lesson.endTime,
+            building: lesson.building,
+            lessonType: lesson.lessonType,
+          );
+        }).toList();
+      });
+      return weeklySchedule;
+    } catch (e) {
+      debugPrint('Ошибка загрузки расписания преподавателя "$teacherName": $e');
+      return {};
+    }
+  }
+
   /// Совместимость: старый публичный метод остаётся.
   Future<void> refreshAllData() async {
     await refreshAllDataWithStatus(forceRefresh: true);

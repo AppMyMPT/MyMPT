@@ -1,11 +1,14 @@
 import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:my_mpt/core/utils/date_formatter.dart';
 import 'package:my_mpt/data/repositories/schedule_repository.dart';
 import 'package:my_mpt/domain/entities/schedule.dart';
+import 'package:my_mpt/presentation/screens/teacher_schedule_screen.dart';
 import 'package:my_mpt/presentation/widgets/schedule/day_section.dart';
+import 'package:my_mpt/presentation/widgets/schedule/lesson_detail_sheet.dart';
 
 import 'package:my_mpt/presentation/widgets/settings/info_notification.dart';
 
@@ -24,9 +27,12 @@ class _ScheduleScreenState extends State {
 
   Map<String, List<Schedule>> _weeklySchedule = {};
   bool _isLoading = false;
+  bool _isStudent = true;
 
   bool _isOffline = false;
   bool _autoOfflineNotified = false;
+
+  static const String _selectedRoleKey = 'selected_role';
 
   @override
   void initState() {
@@ -35,9 +41,29 @@ class _ScheduleScreenState extends State {
     _repository = ScheduleRepository();
     _repository.dataUpdatedNotifier.addListener(_onDataUpdated);
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final prefs = await SharedPreferences.getInstance();
+      final role = prefs.getString(_selectedRoleKey) ?? 'student';
+      if (mounted) setState(() => _isStudent = role == 'student');
       _initializeSchedule();
     });
+  }
+
+  void _onLessonTap(Schedule lesson, {String? startTime, String? endTime}) {
+    if (lesson.teacher.trim().isEmpty) return;
+    showLessonDetailSheet(
+      context,
+      lesson: lesson,
+      startTime: startTime,
+      endTime: endTime,
+      onViewTeacherSchedule: () {
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (context) => TeacherScheduleScreen(teacherName: lesson.teacher),
+          ),
+        );
+      },
+    );
   }
 
   Future _initializeSchedule() async {
@@ -167,6 +193,7 @@ class _ScheduleScreenState extends State {
                                   lessons: day.value,
                                   accentColor: _lessonAccent,
                                   weekType: weekType,
+                                  onLessonTap: _isStudent ? _onLessonTap : null,
                                 );
                               },
                               childCount: days.length,

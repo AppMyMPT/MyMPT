@@ -21,6 +21,10 @@ class NumeratorDenominatorCard extends StatelessWidget {
   /// Время окончания пары
   final String endTime;
 
+  /// При нажатии на пару (для студента). Если null, карточка не кликабельна.
+  /// [startTime] и [endTime] — время с карточки для отображения в окне детали.
+  final void Function(Schedule lesson, {String? startTime, String? endTime})? onLessonTap;
+
   const NumeratorDenominatorCard({
     super.key,
     required this.numeratorLesson,
@@ -28,6 +32,7 @@ class NumeratorDenominatorCard extends StatelessWidget {
     required this.lessonNumber,
     required this.startTime,
     required this.endTime,
+    this.onLessonTap,
   });
 
   @override
@@ -66,7 +71,10 @@ class NumeratorDenominatorCard extends StatelessWidget {
                   children: [
                     // Числитель
                     if (numeratorLesson != null)
-                      _buildLessonItem(numeratorLesson!, true)
+                      _wrapIfTappable(
+                        _buildLessonItem(numeratorLesson!, true),
+                        numeratorLesson!,
+                      )
                     else
                       _buildEmptyLessonItem(true),
 
@@ -79,7 +87,10 @@ class NumeratorDenominatorCard extends StatelessWidget {
 
                     // Знаменатель
                     if (denominatorLesson != null)
-                      _buildLessonItem(denominatorLesson!, false)
+                      _wrapIfTappable(
+                        _buildLessonItem(denominatorLesson!, false),
+                        denominatorLesson!,
+                      )
                     else
                       _buildEmptyLessonItem(false),
                   ],
@@ -117,6 +128,18 @@ class NumeratorDenominatorCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _wrapIfTappable(Widget child, Schedule lesson) {
+    if (onLessonTap == null) return child;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => onLessonTap!(lesson, startTime: startTime, endTime: endTime),
+        borderRadius: BorderRadius.circular(8),
+        child: child,
       ),
     );
   }

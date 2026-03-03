@@ -28,6 +28,10 @@ class DaySection extends StatelessWidget {
   /// Тип недели (числитель/знаменатель)
   final String? weekType;
 
+  /// При нажатии на пару (только для студента). Если null, пары не кликабельны.
+  /// [startTime] и [endTime] — время с карточки (для отображения в окне детали).
+  final void Function(Schedule lesson, {String? startTime, String? endTime})? onLessonTap;
+
   const DaySection({
     super.key,
     required this.title,
@@ -35,6 +39,7 @@ class DaySection extends StatelessWidget {
     required this.lessons,
     required this.accentColor,
     this.weekType,
+    this.onLessonTap,
   });
 
   static const Map<String, String> _buildingToAddress = {
@@ -92,8 +97,9 @@ class DaySection extends StatelessWidget {
   /// Создает виджеты для отображения уроков с поддержкой числителя/знаменателя
   List<Widget> _buildLessonWidgets(
     List<Schedule> lessons,
-    List callsData,
-  ) {
+    List callsData, {
+    void Function(Schedule lesson, {String? startTime, String? endTime})? onLessonTap,
+  }) {
     final List<Widget> widgets = [];
 
     final Map<String, List<Schedule>> lessonsByPeriod = {};
@@ -141,22 +147,31 @@ class DaySection extends StatelessWidget {
             lessonNumber: period,
             startTime: startTime,
             endTime: endTime,
+            onLessonTap: onLessonTap,
           ),
         );
       } else {
         for (int j = 0; j < periodLessons.length; j++) {
           final lesson = periodLessons[j];
-
-          widgets.add(
-            LessonCard(
-              number: lesson.number,
-              subject: lesson.subject,
-              teacher: lesson.teacher,
-              startTime: startTime,
-              endTime: endTime,
-              accentColor: accentColor,
-            ),
+          Widget card = LessonCard(
+            number: lesson.number,
+            subject: lesson.subject,
+            teacher: lesson.teacher,
+            startTime: startTime,
+            endTime: endTime,
+            accentColor: accentColor,
           );
+          if (onLessonTap != null) {
+            card = Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => onLessonTap!(lesson, startTime: startTime, endTime: endTime),
+                borderRadius: BorderRadius.circular(16),
+                child: card,
+              ),
+            );
+          }
+          widgets.add(card);
 
           if (j < periodLessons.length - 1) {
             widgets.add(const SizedBox(height: 8));
@@ -221,7 +236,7 @@ class DaySection extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 20),
-          Column(children: _buildLessonWidgets(lessons, callsData)),
+          Column(children: _buildLessonWidgets(lessons, callsData, onLessonTap: onLessonTap)),
           const SizedBox(height: 12),
           Divider(color: Colors.white.withValues(alpha: 0.05), height: 32),
         ],

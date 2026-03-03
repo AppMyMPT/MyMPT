@@ -1,5 +1,6 @@
 import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:my_mpt/core/utils/calls_util.dart';
@@ -9,8 +10,10 @@ import 'package:my_mpt/data/repositories/replacement_repository.dart';
 import 'package:my_mpt/data/repositories/schedule_repository.dart';
 import 'package:my_mpt/domain/entities/replacement.dart';
 import 'package:my_mpt/domain/entities/schedule.dart';
+import 'package:my_mpt/presentation/screens/teacher_schedule_screen.dart';
 import 'package:my_mpt/presentation/widgets/overview/page_indicator.dart';
 import 'package:my_mpt/presentation/widgets/overview/replacement_card.dart';
+import 'package:my_mpt/presentation/widgets/schedule/lesson_detail_sheet.dart';
 import 'package:my_mpt/presentation/widgets/shared/break_indicator.dart';
 import 'package:my_mpt/presentation/widgets/shared/lesson_card.dart';
 import 'package:my_mpt/presentation/widgets/shared/location.dart';
@@ -41,6 +44,9 @@ class _OverviewScreenState extends State<OverviewScreen> {
   bool isLoading = false;
   bool isOffline = false;
   bool _autoOfflineNotified = false;
+  bool _isStudent = true;
+
+  static const String _selectedRoleKey = 'selected_role';
 
   late final PageController pageController;
   late final ValueNotifier<int> _pageRequest;
@@ -95,9 +101,29 @@ class _OverviewScreenState extends State<OverviewScreen> {
 
     repository.dataUpdatedNotifier.addListener(onDataUpdated);
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final prefs = await SharedPreferences.getInstance();
+      final role = prefs.getString(_selectedRoleKey) ?? 'student';
+      if (mounted) setState(() => _isStudent = role == 'student');
       initializeSchedule();
     });
+  }
+
+  void _onLessonTap(Schedule lesson, {String? startTime, String? endTime}) {
+    if (lesson.teacher.trim().isEmpty) return;
+    showLessonDetailSheet(
+      context,
+      lesson: lesson,
+      startTime: startTime,
+      endTime: endTime,
+      onViewTeacherSchedule: () {
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (context) => TeacherScheduleScreen(teacherName: lesson.teacher),
+          ),
+        );
+      },
+    );
   }
 
   void _onExternalPageRequest() {
@@ -402,16 +428,29 @@ class _OverviewScreenState extends State<OverviewScreen> {
                             }
                           } catch (_) {}
 
-                          final List<Widget> widgets = [
-                            LessonCard(
-                              number: item.number,
-                              subject: item.subject,
-                              teacher: item.teacher,
-                              startTime: lessonStartTime,
-                              endTime: lessonEndTime,
-                              accentColor: lessonAccent,
-                            ),
-                          ];
+                          Widget card = LessonCard(
+                            number: item.number,
+                            subject: item.subject,
+                            teacher: item.teacher,
+                            startTime: lessonStartTime,
+                            endTime: lessonEndTime,
+                            accentColor: lessonAccent,
+                          );
+                          if (_isStudent) {
+                            card = Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () => _onLessonTap(
+                                  item,
+                                  startTime: lessonStartTime,
+                                  endTime: lessonEndTime,
+                                ),
+                                borderRadius: BorderRadius.circular(16),
+                                child: card,
+                              ),
+                            );
+                          }
+                          final List<Widget> widgets = [card];
 
                           if (index < scheduleWithChanges.length - 1) {
                             String nextLessonStartTime = scheduleWithChanges[index + 1].startTime;
