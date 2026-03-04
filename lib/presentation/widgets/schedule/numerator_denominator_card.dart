@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:my_mpt/domain/entities/schedule.dart';
 
@@ -37,6 +38,95 @@ class NumeratorDenominatorCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isIOS = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+
+    final row = Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Левая часть - номер пары
+        Container(
+          width: 60,
+          margin: const EdgeInsets.symmetric(vertical: 8),
+          child: Center(child: _NumberBadge(number: lessonNumber)),
+        ),
+
+        // Центральная часть - пары с разделителем
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.all(8),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Числитель
+                Expanded(
+                  child: numeratorLesson != null
+                      ? _wrapIfTappable(
+                          _buildLessonItem(
+                            numeratorLesson!,
+                            true,
+                            singleLineSubject: isIOS,
+                          ),
+                          numeratorLesson!,
+                        )
+                      : _buildEmptyLessonItem(true),
+                ),
+
+                // Разделитель
+                Container(
+                  height: 1,
+                  color: const Color(0xFF333333),
+                  margin: const EdgeInsets.symmetric(vertical: 4),
+                ),
+
+                // Знаменатель
+                Expanded(
+                  child: denominatorLesson != null
+                      ? _wrapIfTappable(
+                          _buildLessonItem(
+                            denominatorLesson!,
+                            false,
+                            singleLineSubject: isIOS,
+                          ),
+                          denominatorLesson!,
+                        )
+                      : _buildEmptyLessonItem(false),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        // Правая часть - время
+        Container(
+          width: 60,
+          margin: const EdgeInsets.symmetric(vertical: 8),
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  startTime,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  endTime,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.white.withValues(alpha: 0.7),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 0),
       decoration: BoxDecoration(
@@ -51,86 +141,11 @@ class NumeratorDenominatorCard extends StatelessWidget {
           ),
         ],
       ),
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Левая часть - номер пары
-            Container(
-              width: 60,
-              margin: const EdgeInsets.symmetric(vertical: 8),
-              child: Center(child: _NumberBadge(number: lessonNumber)),
-            ),
-
-            // Центральная часть - пары с разделителем
-            Expanded(
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Числитель
-                    Expanded(
-                      child: numeratorLesson != null
-                          ? _wrapIfTappable(
-                              _buildLessonItem(numeratorLesson!, true),
-                              numeratorLesson!,
-                            )
-                          : _buildEmptyLessonItem(true),
-                    ),
-
-                    // Разделитель
-                    Container(
-                      height: 1,
-                      color: const Color(0xFF333333),
-                      margin: const EdgeInsets.symmetric(vertical: 4),
-                    ),
-
-                    // Знаменатель
-                    Expanded(
-                      child: denominatorLesson != null
-                          ? _wrapIfTappable(
-                              _buildLessonItem(denominatorLesson!, false),
-                              denominatorLesson!,
-                            )
-                          : _buildEmptyLessonItem(false),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Правая часть - время
-            Container(
-              width: 60,
-              margin: const EdgeInsets.symmetric(vertical: 8),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      startTime,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      endTime,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.white.withValues(alpha: 0.7),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+      child: isIOS
+          // На iOS IntrinsicHeight часто добавляет микролаги в списках из-за
+          // двойного прохода layout, поэтому даем фиксированную высоту.
+          ? SizedBox(height: 104, child: row)
+          : IntrinsicHeight(child: row),
     );
   }
 
@@ -154,7 +169,11 @@ class NumeratorDenominatorCard extends StatelessWidget {
   ///
   /// Возвращает:
   /// - Widget: Виджет урока
-  Widget _buildLessonItem(Schedule lesson, bool isNumerator) {
+  Widget _buildLessonItem(
+    Schedule lesson,
+    bool isNumerator, {
+    required bool singleLineSubject,
+  }) {
     final color = isNumerator
         ? const Color(0xFFFF8C00) // Оранжевый для числителя
         : const Color(0xFF4FC3F7); // Голубой для знаменателя;
@@ -178,6 +197,8 @@ class NumeratorDenominatorCard extends StatelessWidget {
             children: [
               Text(
                 lesson.subject,
+                maxLines: singleLineSubject ? 1 : null,
+                overflow: singleLineSubject ? TextOverflow.ellipsis : null,
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
