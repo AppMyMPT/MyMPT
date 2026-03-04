@@ -174,12 +174,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 await _loadScheduleData(forceRefresh: true, userInitiated: true);
               },
               color: progressColor,
-              displacement: 60.0,
-              edgeOffset: MediaQuery.of(context).padding.top + 20,
+              displacement: 40.0,
+              edgeOffset: 0,
               child: CustomScrollView(
-                physics: const AlwaysScrollableScrollPhysics(
-                  parent: BouncingScrollPhysics(decelerationRate: ScrollDecelerationRate.normal),
-                ),
+                physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
                 slivers: [
                   SliverPersistentHeader(
                     pinned: true,
