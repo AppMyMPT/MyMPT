@@ -38,6 +38,17 @@ class NumeratorDenominatorCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    
+    final bg = cs.surface;
+    final borderColor = isDark ? const Color(0xFF333333) : Colors.black.withValues(alpha: 0.06);
+    final shadowColor = isDark ? Colors.black.withValues(alpha: 0.5) : Colors.black.withValues(alpha: 0.04);
+    
+    final titleColor = isDark ? Colors.white : Colors.black87;
+    final subColor = isDark ? Colors.white.withValues(alpha: 0.7) : Colors.black54;
+
     final isIOS = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 
     final row = Row(
@@ -65,16 +76,18 @@ class NumeratorDenominatorCard extends StatelessWidget {
                             numeratorLesson!,
                             true,
                             singleLineSubject: isIOS,
+                            titleColor: titleColor,
+                            subColor: subColor,
                           ),
                           numeratorLesson!,
                         )
-                      : _buildEmptyLessonItem(true),
+                      : _buildEmptyLessonItem(true, isDark: isDark),
                 ),
 
                 // Разделитель
                 Container(
                   height: 1,
-                  color: const Color(0xFF333333),
+                  color: borderColor,
                   margin: const EdgeInsets.symmetric(vertical: 4),
                 ),
 
@@ -86,10 +99,12 @@ class NumeratorDenominatorCard extends StatelessWidget {
                             denominatorLesson!,
                             false,
                             singleLineSubject: isIOS,
+                            titleColor: titleColor,
+                            subColor: subColor,
                           ),
                           denominatorLesson!,
                         )
-                      : _buildEmptyLessonItem(false),
+                      : _buildEmptyLessonItem(false, isDark: isDark),
                 ),
               ],
             ),
@@ -106,10 +121,10 @@ class NumeratorDenominatorCard extends StatelessWidget {
               children: [
                 Text(
                   startTime,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: Colors.white,
+                    color: titleColor,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -117,7 +132,7 @@ class NumeratorDenominatorCard extends StatelessWidget {
                   endTime,
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.white.withValues(alpha: 0.7),
+                    color: subColor,
                   ),
                 ),
               ],
@@ -130,12 +145,12 @@ class NumeratorDenominatorCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 0),
       decoration: BoxDecoration(
-        color: const Color(0xFF111111),
+        color: bg,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF333333)),
+        border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.5),
+            color: shadowColor,
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
@@ -173,6 +188,8 @@ class NumeratorDenominatorCard extends StatelessWidget {
     Schedule lesson,
     bool isNumerator, {
     required bool singleLineSubject,
+    required Color titleColor,
+    required Color subColor,
   }) {
     final color = isNumerator
         ? const Color(0xFFFF8C00) // Оранжевый для числителя
@@ -199,10 +216,10 @@ class NumeratorDenominatorCard extends StatelessWidget {
                 lesson.subject,
                 maxLines: singleLineSubject ? 1 : null,
                 overflow: singleLineSubject ? TextOverflow.ellipsis : null,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                  color: titleColor,
                 ),
               ),
               const SizedBox(height: 2),
@@ -210,7 +227,7 @@ class NumeratorDenominatorCard extends StatelessWidget {
                 lesson.teacher,
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.white.withValues(alpha: 0.7),
+                  color: subColor,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -229,7 +246,7 @@ class NumeratorDenominatorCard extends StatelessWidget {
   ///
   /// Возвращает:
   /// - Widget: Виджет пустого урока
-  Widget _buildEmptyLessonItem(bool isNumerator) {
+  Widget _buildEmptyLessonItem(bool isNumerator, {required bool isDark}) {
     final color = isNumerator
         ? const Color(0xFFFF8C00) // Оранжевый для числителя
         : const Color(0xFF4FC3F7); // Голубой для знаменателя;
@@ -253,10 +270,10 @@ class NumeratorDenominatorCard extends StatelessWidget {
             children: [
               Text(
                 'Нет пары',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Colors.white70,
+                  color: isDark ? Colors.white70 : Colors.black54,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -278,20 +295,24 @@ class _NumberBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = isDark ? const Color(0xFF333333) : const Color(0xFFE5E5EA);
+    final textColor = isDark ? Colors.white : Colors.black87;
+
     return Container(
       width: 40,
       height: 40,
       decoration: BoxDecoration(
-        color: const Color(0xFF333333),
+        color: bg,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Center(
         child: Text(
           number,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w700,
-            color: Colors.white,
+            color: textColor,
           ),
         ),
       ),

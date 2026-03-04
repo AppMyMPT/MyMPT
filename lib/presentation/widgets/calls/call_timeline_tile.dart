@@ -1,14 +1,30 @@
 import 'package:flutter/material.dart';
 
+/// Виджет элемента временной шкалы звонков
 class CallTimelineTile extends StatelessWidget {
+  /// Номер периода/пары
   final String period;
+
+  /// Время начала периода
   final String startTime;
+
+  /// Время окончания периода
   final String endTime;
+
+  /// Описание периода
   final String description;
+
+  /// Флаг отображения соединительной линии
   final bool showConnector;
+
+  /// Идёт ли сейчас эта пара (подсветка номера)
   final bool isCurrent;
-  final bool isBreakCurrent;
+
+  /// Цвет подсветки текущей пары и перемены (числитель/знаменатель)
   final Color currentAccentColor;
+
+  /// Идёт ли сейчас перемена (подсветка соединительной палочки)
+  final bool isBreakCurrent;
 
   const CallTimelineTile({
     super.key,
@@ -16,145 +32,85 @@ class CallTimelineTile extends StatelessWidget {
     required this.startTime,
     required this.endTime,
     required this.description,
-    this.showConnector = true,
+    required this.showConnector,
     this.isCurrent = false,
+    this.currentAccentColor = const Color(0xFFFF8C00),
     this.isBreakCurrent = false,
-    required this.currentAccentColor,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final cs = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
+    
+    final titleColor = isDark ? Colors.white : Colors.black87;
+    final subColor = isDark ? Colors.white70 : Colors.black54;
 
-    final dotColor = isCurrent ? currentAccentColor : (isDark ? Colors.white24 : cs.onSurface.withOpacity(0.2));
-    final connectorColor = isBreakCurrent
-        ? currentAccentColor
-        : (isDark ? Colors.white12 : cs.onSurface.withOpacity(0.1));
+    final periodColor = isCurrent ? currentAccentColor : titleColor;
+    final containerColor = isCurrent 
+        ? currentAccentColor.withValues(alpha: 0.3) 
+        : (isDark ? const Color(0xFF333333) : const Color(0xFFE5E5EA));
+        
+    final connectorColor = isBreakCurrent 
+        ? currentAccentColor 
+        : (isDark ? const Color(0xFFFFFFFF).withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.15));
 
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 70,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                const SizedBox(height: 6),
-                Text(
-                  startTime,
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Column(
+          children: [
+            Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: containerColor,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Center(
+                child: Text(
+                  period,
                   style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: isCurrent ? FontWeight.bold : FontWeight.w600,
-                    color: isCurrent ? currentAccentColor : (isDark ? Colors.white : cs.onSurface),
+                    color: periodColor,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
+              ),
+            ),
+            if (showConnector)
+              Container(
+                width: 2,
+                height: 48,
+                margin: const EdgeInsets.symmetric(vertical: 4),
+                color: connectorColor,
+              ),
+          ],
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Text(
-                  endTime,
+                  '$startTime - $endTime',
                   style: TextStyle(
-                    fontSize: 13,
-                    color: isCurrent ? currentAccentColor.withOpacity(0.8) : (isDark ? Colors.white54 : cs.onSurfaceVariant),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: titleColor,
                   ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  description,
+                  style: TextStyle(fontSize: 14, color: subColor),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 16),
-          Column(
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: 8),
-                width: 14,
-                height: 14,
-                decoration: BoxDecoration(
-                  color: dotColor,
-                  shape: BoxShape.circle,
-                  border: isCurrent
-                      ? Border.all(
-                          color: currentAccentColor.withOpacity(0.3),
-                          width: 4,
-                        )
-                      : null,
-                ),
-              ),
-              if (showConnector)
-                Expanded(
-                  child: Container(
-                    width: 2,
-                    margin: const EdgeInsets.symmetric(vertical: 4),
-                    decoration: BoxDecoration(
-                      color: connectorColor,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Container(
-              margin: const EdgeInsets.only(bottom: 24),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: isCurrent
-                    ? currentAccentColor.withOpacity(0.1)
-                    : (isDark ? Colors.white.withOpacity(0.05) : cs.onSurfaceVariant.withOpacity(0.1)),
-                borderRadius: BorderRadius.circular(16),
-                border: isCurrent
-                    ? Border.all(
-                        color: currentAccentColor.withOpacity(0.3),
-                        width: 1,
-                      )
-                    : Border.all(
-                        color: Colors.transparent,
-                        width: 1,
-                      ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isCurrent
-                              ? currentAccentColor.withOpacity(0.2)
-                              : (isDark ? Colors.white12 : cs.onSurfaceVariant.withOpacity(0.2)),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          '$period пара',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: isCurrent ? currentAccentColor : (isDark ? Colors.white70 : cs.onSurface),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (description.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      description,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: isDark ? Colors.white70 : cs.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

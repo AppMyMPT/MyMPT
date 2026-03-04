@@ -122,19 +122,6 @@ class MyApp extends StatelessWidget {
         height: 80,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         elevation: 0,
-        iconTheme: WidgetStateProperty.resolveWith(
-          (states) => IconThemeData(
-            color: states.contains(WidgetState.selected) ? Colors.black87 : Colors.black54,
-          ),
-        ),
-        labelTextStyle: WidgetStateProperty.resolveWith(
-          (states) => TextStyle(
-            fontSize: 11,
-            fontWeight: states.contains(WidgetState.selected) ? FontWeight.w600 : FontWeight.w500,
-            letterSpacing: 0.1,
-            color: states.contains(WidgetState.selected) ? Colors.black87 : Colors.black54,
-          ),
-        ),
       ),
     );
   }
@@ -327,7 +314,24 @@ class _MainScreenState extends State<MainScreen> {
         child: Theme(
           data: Theme.of(context).copyWith(
             navigationBarTheme: Theme.of(context).navigationBarTheme.copyWith(
-              indicatorColor: isDark ? activeColor.withOpacity(0.25) : Colors.black.withOpacity(0.06),
+              indicatorColor: isDark ? activeColor.withOpacity(0.25) : activeColor.withOpacity(0.15),
+              iconTheme: WidgetStateProperty.resolveWith(
+                (states) => IconThemeData(
+                  color: states.contains(WidgetState.selected) 
+                      ? (isDark ? Colors.white : activeColor)
+                      : (isDark ? Colors.white70 : Colors.black54),
+                ),
+              ),
+              labelTextStyle: WidgetStateProperty.resolveWith(
+                (states) => TextStyle(
+                  fontSize: 11,
+                  fontWeight: states.contains(WidgetState.selected) ? FontWeight.w600 : FontWeight.w500,
+                  letterSpacing: 0.1,
+                  color: states.contains(WidgetState.selected) 
+                      ? (isDark ? Colors.white : activeColor) 
+                      : (isDark ? Colors.white60 : Colors.black54),
+                ),
+              ),
             ),
           ),
           child: NavigationBar(
@@ -344,7 +348,7 @@ class _MainScreenState extends State<MainScreen> {
               for (final item in _navItems)
                 NavigationDestination(
                   icon: Icon(item.icon),
-                  selectedIcon: Icon(item.selectedIcon, color: isDark ? activeColor : Colors.black87),
+                  selectedIcon: Icon(item.selectedIcon),
                   label: item.label,
                 ),
             ],

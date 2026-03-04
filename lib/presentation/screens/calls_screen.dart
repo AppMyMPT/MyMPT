@@ -16,18 +16,17 @@ class CallsScreen extends StatelessWidget {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
+    
+    final bg = theme.scaffoldBackgroundColor;
+    final cardBg = cs.surface;
+    final shadowColor = isDark ? Colors.black.withValues(alpha: 0.45) : Colors.black.withValues(alpha: 0.04);
 
     final List<Call> callsData = CallsUtil.getCalls();
     final weekType = DateFormatter.getWeekType(DateTime.now());
     final accentColor = weekType == 'Знаменатель' ? _denominatorColor : _numeratorColor;
 
-    final cardBg = cs.surface;
-    final shadow = isDark 
-      ? Colors.black.withOpacity(0.45) 
-      : Colors.black.withOpacity(0.10); // Возвращаем оригинальную тень, которая была до моих изменений
-
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+      backgroundColor: bg,
       body: SafeArea(
         bottom: false,
         child: SingleChildScrollView(
@@ -47,7 +46,7 @@ class CallsScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(28),
                   boxShadow: [
                     BoxShadow(
-                      color: shadow,
+                      color: shadowColor,
                       blurRadius: 30,
                       offset: const Offset(0, 18),
                     ),
