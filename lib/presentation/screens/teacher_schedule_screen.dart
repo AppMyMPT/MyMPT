@@ -34,7 +34,7 @@ class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> {
   Future<void> _loadSchedule() async {
     setState(() => _isLoading = true);
     try {
-      final schedule = await _repository.getTeacherSchedule(widget.teacherName);
+      final schedule = await _repository.getWeeklyScheduleForTeacher(widget.teacherName);
       if (mounted) {
         setState(() {
           _schedule = schedule;
