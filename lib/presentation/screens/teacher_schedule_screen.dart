@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:my_mpt/core/utils/date_formatter.dart';
 import 'package:my_mpt/core/utils/teacher_full_name_resolver.dart';
-import 'package:my_mpt/data/repositories/teacher_schedule_repository.dart';
+import 'package:my_mpt/data/repositories/schedule_repository.dart';
 import 'package:my_mpt/domain/entities/schedule.dart';
 import 'package:my_mpt/presentation/widgets/schedule/day_section.dart';
 
@@ -20,21 +20,21 @@ class TeacherScheduleScreen extends StatefulWidget {
 }
 
 class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> {
-  late final TeacherScheduleRepository _repository;
+  late final ScheduleRepository _repository;
   Map<String, List<Schedule>> _schedule = {};
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _repository = TeacherScheduleRepository(widget.teacherName);
+    _repository = ScheduleRepository();
     _loadSchedule();
   }
 
   Future<void> _loadSchedule() async {
     setState(() => _isLoading = true);
     try {
-      final schedule = await _repository.getSchedule();
+      final schedule = await _repository.getTeacherSchedule(widget.teacherName);
       if (mounted) {
         setState(() {
           _schedule = schedule;
@@ -128,7 +128,6 @@ class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> {
                         lessons: entry.value,
                         accentColor: Colors.grey,
                         weekType: weekType,
-                        showTeacherInsteadOfGroup: false,
                       );
                     },
                   ),
