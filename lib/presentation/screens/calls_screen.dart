@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:my_mpt/data/models/call.dart';
 import 'package:my_mpt/core/utils/calls_util.dart';
@@ -28,65 +27,55 @@ class CallsScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: bg,
-      extendBodyBehindAppBar: true,
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            padding: EdgeInsets.fromLTRB(16, MediaQuery.paddingOf(context).top + 16 + 115 + 28, 16, 110),
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 24,
-              ),
-              decoration: BoxDecoration(
-                color: cardBg,
-                borderRadius: BorderRadius.circular(28),
-                boxShadow: [
-                  BoxShadow(
-                    color: shadowColor,
-                    blurRadius: 30,
-                    offset: const Offset(0, 18),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: List.generate(callsData.length, (index) {
-                  final call = callsData[index];
-                  final isLast = index == callsData.length - 1;
-                  final isCurrent = CallsUtil.isCallCurrent(call.startTime, call.endTime);
-                  final nextCall = !isLast ? callsData[index + 1] : null;
-                  final isBreakCurrent = nextCall != null &&
-                      CallsUtil.isBreakCurrent(call.endTime, nextCall.startTime);
-                  return CallTimelineTile(
-                    period: call.period,
-                    startTime: call.startTime,
-                    endTime: call.endTime,
-                    description: call.description,
-                    showConnector: !isLast,
-                    isCurrent: isCurrent,
-                    currentAccentColor: accentColor,
-                    isBreakCurrent: isBreakCurrent,
-                  );
-                }),
-              ),
-            ),
-          ),
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: ClipRect(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                child: Container(
-                  color: bg.withValues(alpha: isDark ? 0.3 : 0.4),
-                  padding: EdgeInsets.only(top: MediaQuery.paddingOf(context).top + 16, bottom: 16, left: 16, right: 16),
-                  child: const CallsHeader(),
+      body: SafeArea(
+        bottom: false,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const CallsHeader(),
+              const SizedBox(height: 28),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 24,
+                ),
+                decoration: BoxDecoration(
+                  color: cardBg,
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: [
+                    BoxShadow(
+                      color: shadowColor,
+                      blurRadius: 30,
+                      offset: const Offset(0, 18),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: List.generate(callsData.length, (index) {
+                    final call = callsData[index];
+                    final isLast = index == callsData.length - 1;
+                    final isCurrent = CallsUtil.isCallCurrent(call.startTime, call.endTime);
+                    final nextCall = !isLast ? callsData[index + 1] : null;
+                    final isBreakCurrent = nextCall != null &&
+                        CallsUtil.isBreakCurrent(call.endTime, nextCall.startTime);
+                    return CallTimelineTile(
+                      period: call.period,
+                      startTime: call.startTime,
+                      endTime: call.endTime,
+                      description: call.description,
+                      showConnector: !isLast,
+                      isCurrent: isCurrent,
+                      currentAccentColor: accentColor,
+                      isBreakCurrent: isBreakCurrent,
+                    );
+                  }),
                 ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
