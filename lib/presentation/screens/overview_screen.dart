@@ -235,14 +235,14 @@ class _OverviewScreenState extends State<OverviewScreen> {
   }
 
   List<Color> getHeaderGradient(String weekType, {required bool isDark}) {
-    final base = isDark ? const Color(0xFF111111) : const Color(0xFFFFFFFF);
+    final base = isDark ? const Color(0xFF111111) : const Color(0xFFF5F5F5);
 
     if (weekType == 'Знаменатель') {
       return [base, const Color(0xFF4FC3F7)];
     } else if (weekType == 'Числитель') {
       return [base, const Color(0xFFFF8C00)];
     } else {
-      return [base, isDark ? const Color(0xFF333333) : const Color(0xFFE6E6E6)];
+      return [base, isDark ? const Color(0xFF333333) : const Color(0xFFE0E0E0)];
     }
   }
 

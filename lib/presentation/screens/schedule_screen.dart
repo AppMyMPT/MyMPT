@@ -21,7 +21,6 @@ class ScheduleScreen extends StatefulWidget {
 }
 
 class _ScheduleScreenState extends State {
-  static const _backgroundColor = Color(0xFF000000);
   static const Color _lessonAccent = Colors.grey;
 
   late final ScheduleRepository _repository;
@@ -124,13 +123,15 @@ class _ScheduleScreenState extends State {
     }
   }
 
-  List<Color> _getHeaderGradient(String weekType) {
+  List<Color> _getHeaderGradient(String weekType, {required bool isDark}) {
+    final base = isDark ? const Color(0xFF111111) : const Color(0xFFF5F5F5);
+
     if (weekType == 'Знаменатель') {
-      return const [Color(0xFF111111), Color(0xFF4FC3F7)];
+      return [base, const Color(0xFF4FC3F7)];
     } else if (weekType == 'Числитель') {
-      return const [Color(0xFF111111), Color(0xFFFF8C00)];
+      return [base, const Color(0xFFFF8C00)];
     } else {
-      return const [Color(0xFF111111), Color(0xFF333333)];
+      return [base, isDark ? const Color(0xFF333333) : const Color(0xFFE0E0E0)];
     }
   }
 
@@ -143,15 +144,18 @@ class _ScheduleScreenState extends State {
     final weekType = DateFormatter.getWeekType(now) ?? '';
     final dateLabel = DateFormatter.formatDayWithMonth(now);
 
+    final bg = Theme.of(context).scaffoldBackgroundColor;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     const headerMaxHeight = 176.0;
     const headerMinHeight = 88.0;
 
     return Scaffold(
-      backgroundColor: _backgroundColor,
+      backgroundColor: bg,
       body: isInitialLoading
-          ? const SafeArea(
+          ? SafeArea(
               bottom: false,
-              child: Center(child: CircularProgressIndicator(color: Colors.white)),
+              child: Center(child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary)),
             )
           : Stack(
               children: [
@@ -159,14 +163,14 @@ class _ScheduleScreenState extends State {
                   bottom: false,
                   child: RefreshIndicator(
                     onRefresh: () => _loadScheduleData(forceRefresh: true, userInitiated: true),
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.primary,
                     child: CustomScrollView(
                       physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
                       slivers: [
                         SliverPersistentHeader(
                           pinned: true,
                           delegate: _HeightPinnedHeaderDelegate(
-                            backgroundColor: _backgroundColor,
+                            backgroundColor: bg,
                             maxHeight: headerMaxHeight,
                             minHeight: headerMinHeight,
                             child: _CollapsibleWeekHeader(
@@ -175,7 +179,7 @@ class _ScheduleScreenState extends State {
                               title: 'Неделя',
                               dateLabel: dateLabel,
                               weekType: weekType,
-                              gradient: _getHeaderGradient(weekType),
+                              gradient: _getHeaderGradient(weekType, isDark: isDark),
                               isOffline: _isOffline,
                             ),
                           ),
@@ -254,8 +258,7 @@ class _HeightPinnedHeaderDelegate extends SliverPersistentHeaderDelegate {
   @override
   double get maxExtent => maxHeight;
 
-  @override
-  double get minExtent => minHeight;
+  @override\n  double get minExtent => minHeight;
 
   @override
   bool shouldRebuild(covariant _HeightPinnedHeaderDelegate old) {
@@ -315,6 +318,10 @@ class _CollapsibleWeekHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final titleColor = isDark ? Colors.white : Colors.black87;
+    final subColor = isDark ? Colors.white70 : Colors.black54;
+    
     return LayoutBuilder(
       builder: (context, constraints) {
         final h = constraints.maxHeight.clamp(minHeight, maxHeight);
@@ -361,7 +368,7 @@ class _CollapsibleWeekHeader extends StatelessWidget {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: lerpDouble(0.3, 0.1, tCurved)!),
+                color: Colors.black.withValues(alpha: lerpDouble(isDark ? 0.3 : 0.1, isDark ? 0.1 : 0.05, tCurved)!),
                 blurRadius: lerpDouble(15, 6, tCurved)!,
                 offset: Offset(0, lerpDouble(8, 2, tCurved)!),
               ),
@@ -388,7 +395,7 @@ class _CollapsibleWeekHeader extends StatelessWidget {
                           style: TextStyle(
                             fontSize: titleSize,
                             fontWeight: FontWeight.w700,
-                            color: Colors.white,
+                            color: titleColor,
                           ),
                         ),
                         SizedBox(height: gapTitleDate),
@@ -399,7 +406,7 @@ class _CollapsibleWeekHeader extends StatelessWidget {
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: dateSize,
-                            color: Colors.white70,
+                            color: subColor,
                           ),
                         ),
                       ],
@@ -426,7 +433,7 @@ class _CollapsibleWeekHeader extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: titleSize,
                                 fontWeight: FontWeight.w700,
-                                color: Colors.white,
+                                color: titleColor,
                               ),
                             ),
                             SizedBox(height: gapTitleDate),
@@ -436,7 +443,7 @@ class _CollapsibleWeekHeader extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontSize: dateSize,
-                                color: Colors.white70,
+                                color: subColor,
                               ),
                             ),
                           ],
@@ -454,7 +461,7 @@ class _CollapsibleWeekHeader extends StatelessWidget {
                       child: Icon(
                         Icons.wifi_off,
                         size: iconSize,
-                        color: Colors.white.withValues(alpha: 0.85),
+                        color: titleColor.withValues(alpha: 0.85),
                       ),
                     ),
                   ),
@@ -483,6 +490,12 @@ class _WeekTypePill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final bg = isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.06);
+    final border = isDark ? Colors.white.withValues(alpha: 0.12) : Colors.black.withValues(alpha: 0.08);
+    final fg = isDark ? Colors.white : Colors.black87;
+
     final radius = BorderRadius.circular(14);
 
     return ClipRRect(
@@ -492,9 +505,9 @@ class _WeekTypePill extends StatelessWidget {
         child: Container(
           padding: EdgeInsets.symmetric(horizontal: padH, vertical: padV),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.08),
+            color: bg,
             borderRadius: radius,
-            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+            border: Border.all(color: border),
           ),
           child: Text(
             text,
@@ -504,7 +517,7 @@ class _WeekTypePill extends StatelessWidget {
               fontSize: fontSize,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.3,
-              color: Colors.white,
+              color: fg,
             ),
           ),
         ),
