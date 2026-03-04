@@ -24,7 +24,7 @@ class CallsScreen extends StatelessWidget {
     final cardBg = cs.surface;
     final shadow = isDark 
       ? Colors.black.withOpacity(0.45) 
-      : Colors.black.withOpacity(0.04);
+      : Colors.black.withOpacity(0.10); // Возвращаем оригинальную тень, которая была до моих изменений
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -45,11 +45,11 @@ class CallsScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: cardBg,
                   borderRadius: BorderRadius.circular(28),
-                  boxShadow: isDark ? null : [
+                  boxShadow: [
                     BoxShadow(
                       color: shadow,
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
+                      blurRadius: 30,
+                      offset: const Offset(0, 18),
                     ),
                   ],
                 ),

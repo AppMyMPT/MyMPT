@@ -98,14 +98,14 @@ class MyApp extends StatelessWidget {
       primary: Color(0xFFFF8C00),
       secondary: Color(0xFFFFA500),
       tertiary: Color(0xFFFFB347),
-      surface: Color(0xFFFFFFFF),
+      surface: Color(0xFFF5F5F5), // Сопоставляем 0xFF111111 из темной с 0xFFF5F5F5 в светлой
     );
 
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
       fontFamily: 'Roboto',
-      scaffoldBackgroundColor: const Color(0xFFF2F2F7),
+      scaffoldBackgroundColor: const Color(0xFFFFFFFF), // Сопоставляем 0xFF000000 из темной с 0xFFFFFFFF в светлой
       colorScheme: cs,
       textTheme: ThemeData.light().textTheme.apply(
             bodyColor: Colors.black87,
@@ -114,7 +114,7 @@ class MyApp extends StatelessWidget {
       appBarTheme: const AppBarTheme(
         foregroundColor: Colors.black87,
         elevation: 0,
-        backgroundColor: Color(0xFFF2F2F7),
+        backgroundColor: Color(0xFFFFFFFF), // Белый фон
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: const Color(0xFFFFFFFF),

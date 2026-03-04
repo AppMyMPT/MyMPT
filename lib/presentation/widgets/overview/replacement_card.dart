@@ -34,13 +34,6 @@ class ReplacementCard extends StatelessWidget {
           color: accentColor.withOpacity(0.3),
           width: 1,
         ),
-        boxShadow: isDark ? null : [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          )
-        ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
