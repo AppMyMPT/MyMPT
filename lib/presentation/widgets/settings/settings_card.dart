@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// Виджет карточки настроек
 class SettingsCard extends StatefulWidget {
@@ -78,7 +80,14 @@ class _SettingsCardState extends State<SettingsCard> with SingleTickerProviderSt
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: widget.onTap,
+        onTap: widget.onTap != null
+            ? () {
+                if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+                  HapticFeedback.lightImpact();
+                }
+                widget.onTap!();
+              }
+            : null,
         borderRadius: BorderRadius.circular(24),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),

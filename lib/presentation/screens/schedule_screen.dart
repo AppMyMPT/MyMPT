@@ -2,6 +2,7 @@ import 'dart:ui' show ImageFilter, lerpDouble;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:my_mpt/core/utils/date_formatter.dart';
@@ -51,6 +52,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
   void _onLessonTap(Schedule lesson, {String? startTime, String? endTime}) {
     if (lesson.teacher.trim().isEmpty) return;
+    
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+      HapticFeedback.lightImpact();
+    }
+
     showLessonDetailSheet(
       context,
       lesson: lesson,
@@ -158,7 +164,12 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               child: Center(child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary)),
             )
           : RefreshIndicator(
-              onRefresh: () => _loadScheduleData(forceRefresh: true, userInitiated: true),
+              onRefresh: () async {
+                if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+                  HapticFeedback.lightImpact();
+                }
+                await _loadScheduleData(forceRefresh: true, userInitiated: true);
+              },
               color: Theme.of(context).colorScheme.primary,
               child: CustomScrollView(
                 physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),

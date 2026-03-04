@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:my_mpt/core/services/app_theme_service.dart';
@@ -89,6 +88,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _repository.dataUpdatedNotifier.removeListener(_onScheduleDataUpdated);
     AppThemeService.themeMode.removeListener(_onThemeChanged);
     super.dispose();
+  }
+
+  void _triggerHaptic() {
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+      HapticFeedback.lightImpact();
+    }
   }
 
   Future<void> _onScheduleDataUpdated() async {
@@ -281,6 +286,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       value: ThemeMode.system,
                       groupValue: _themeMode,
                       onChanged: (v) async {
+                        _triggerHaptic();
                         if (v == null) return;
                         await AppThemeService.setThemeMode(v);
                         if (context.mounted) Navigator.pop(context);
@@ -291,6 +297,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       value: ThemeMode.light,
                       groupValue: _themeMode,
                       onChanged: (v) async {
+                        _triggerHaptic();
                         if (v == null) return;
                         await AppThemeService.setThemeMode(v);
                         if (context.mounted) Navigator.pop(context);
@@ -301,6 +308,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       value: ThemeMode.dark,
                       groupValue: _themeMode,
                       onChanged: (v) async {
+                        _triggerHaptic();
                         if (v == null) return;
                         await AppThemeService.setThemeMode(v);
                         if (context.mounted) Navigator.pop(context);
@@ -729,7 +737,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _sectionTitle('Дополнительно'),
               const SizedBox(height: 14),
               GestureDetector(
-                onTap: _showAboutDialog,
+                onTap: () {
+                  _triggerHaptic();
+                  _showAboutDialog();
+                },
                 child: Container(
                   decoration: BoxDecoration(
                     color: cs.surface,
@@ -844,6 +855,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           return ListTile(
                             title: Text(specialty.name),
                             onTap: () {
+                              _triggerHaptic();
                               Navigator.pop(context);
                               _onSpecialtySelected(specialty);
                             },
@@ -901,6 +913,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               return ListTile(
                                 title: Text(group.code),
                                 onTap: () {
+                                  _triggerHaptic();
                                   Navigator.pop(context);
                                   _onGroupSelected(group);
                                 },
@@ -958,6 +971,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               return ListTile(
                                 title: Text(teacher.teacherName),
                                 onTap: () {
+                                  _triggerHaptic();
                                   Navigator.pop(context);
                                   _onTeacherSelected(teacher);
                                 },

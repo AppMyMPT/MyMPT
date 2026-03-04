@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:my_mpt/data/repositories/specialty_repository.dart';
 import 'package:my_mpt/data/repositories/group_repository.dart';
 import 'package:my_mpt/data/repositories/teacher_repository.dart';
@@ -64,6 +66,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     _groupRepository = GroupRepository();
     _teacherRepository = TeacherRepository();
     _preloadAllData();
+  }
+
+  void _triggerHaptic() {
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+      HapticFeedback.lightImpact();
+    }
   }
 
   Future<void> _preloadAllData() async {
@@ -320,6 +328,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             height: 50,
             child: ElevatedButton(
               onPressed: () {
+                _triggerHaptic();
                 setState(() {
                   _currentPage = 1;
                 });
@@ -392,6 +401,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           height: 50,
           child: ElevatedButton(
             onPressed: () {
+              _triggerHaptic();
               setState(() {
                 _currentPage = 2;
               });
@@ -422,6 +432,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         const SizedBox(height: 20),
         TextButton(
           onPressed: () {
+            _triggerHaptic();
             setState(() {
               _currentPage = 0;
             });
@@ -453,6 +464,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
     return GestureDetector(
       onTap: () {
+        _triggerHaptic();
         setState(() {
           _selectedRole = value;
         });
@@ -555,6 +567,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       );
                     }).toList(),
                     onChanged: (data_model.Specialty? newValue) {
+                      _triggerHaptic();
                       setState(() {
                         _selectedSpecialty = newValue;
                       });
@@ -575,6 +588,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           child: ElevatedButton(
             onPressed: _selectedSpecialty != null
                 ? () {
+                    _triggerHaptic();
                     setState(() {
                       _currentPage = 3;
                     });
@@ -604,6 +618,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         const SizedBox(height: 20),
         TextButton(
           onPressed: () {
+            _triggerHaptic();
             setState(() {
               _currentPage = 1;
             });
@@ -678,6 +693,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       );
                     }).toList(),
                     onChanged: (Group? newValue) {
+                      _triggerHaptic();
                       setState(() {
                         _selectedGroup = newValue;
                       });
@@ -702,7 +718,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           width: double.infinity,
           height: 50,
           child: ElevatedButton(
-            onPressed: _selectedGroup != null ? _saveSelectionAndProceed : null,
+            onPressed: _selectedGroup != null ? () {
+              _triggerHaptic();
+              _saveSelectionAndProceed();
+            } : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: btnBg,
               foregroundColor: btnFg,
@@ -726,6 +745,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         const SizedBox(height: 20),
         TextButton(
           onPressed: () {
+            _triggerHaptic();
             setState(() {
               _currentPage = 2; // Возврат к выбору специальности
             });
@@ -800,6 +820,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       );
                     }).toList(),
                     onChanged: (Teacher? newValue) {
+                      _triggerHaptic();
                       setState(() {
                         _selectedTeacher = newValue;
                       });
@@ -824,7 +845,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           width: double.infinity,
           height: 50,
           child: ElevatedButton(
-            onPressed: _selectedTeacher != null ? _saveSelectionAndProceed : null,
+            onPressed: _selectedTeacher != null ? () {
+              _triggerHaptic();
+              _saveSelectionAndProceed();
+            } : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: btnBg,
               foregroundColor: btnFg,
@@ -848,6 +872,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         const SizedBox(height: 20),
         TextButton(
           onPressed: () {
+            _triggerHaptic();
             setState(() {
               _currentPage = 1; // Возврат к выбору роли
             });

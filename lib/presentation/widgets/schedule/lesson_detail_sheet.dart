@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:my_mpt/core/utils/teacher_full_name_resolver.dart';
 import 'package:my_mpt/domain/entities/schedule.dart';
 
@@ -85,6 +87,9 @@ void showLessonDetailSheet(
             const SizedBox(height: 24),
             FilledButton.icon(
               onPressed: () {
+                if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+                  HapticFeedback.lightImpact();
+                }
                 Navigator.of(context).pop();
                 onViewTeacherSchedule();
               },
