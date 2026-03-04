@@ -289,8 +289,11 @@ class _HeightPinnedHeaderDelegate extends SliverPersistentHeaderDelegate {
               ),
             ),
           )
-        else
+        else if (!enableBlur && blurSigma > 0.1)
+          ColoredBox(color: backgroundColor.withAlpha((overlayAlpha * 255).toInt()))
+        else if (t == 0.0)
           ColoredBox(color: backgroundColor),
+          
         Padding(
           padding: EdgeInsets.only(top: paddingTop),
           child: child,
