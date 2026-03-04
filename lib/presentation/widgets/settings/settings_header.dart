@@ -12,7 +12,7 @@ class SettingsHeader extends StatelessWidget {
 
     final gradientColors = isDark
         ? const [Color(0xFF333333), Color(0xFF111111)]
-        : [cs.primary.withOpacity(0.18), cs.surface];
+        : const [Color(0xFFFFFFFF), Color(0xFFF5F5F5)];
 
     final titleColor = isDark ? Colors.white : cs.onSurface;
     final subtitleColor = isDark ? Colors.white70 : cs.onSurfaceVariant;

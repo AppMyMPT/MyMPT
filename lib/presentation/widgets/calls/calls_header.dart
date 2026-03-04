@@ -4,20 +4,25 @@ import 'package:flutter/material.dart';
 class CallsHeader extends StatelessWidget {
   const CallsHeader({super.key});
 
-  /// Градиент для заголовка экрана
-  static const List<Color> _headerGradient = [
-    Color(0xFF333333),
-    Color(0xFF111111),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
+    final gradientColors = isDark
+        ? const [Color(0xFF333333), Color(0xFF111111)]
+        : const [Color(0xFFFFFFFF), Color(0xFFF5F5F5)];
+
+    final titleColor = isDark ? Colors.white : cs.onSurface;
+    final subtitleColor = isDark ? Colors.white70 : cs.onSurfaceVariant;
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
-        gradient: const LinearGradient(
-          colors: _headerGradient,
+        gradient: LinearGradient(
+          colors: gradientColors,
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -30,7 +35,7 @@ class CallsHeader extends StatelessWidget {
             Text(
               'Звонки техникума',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: Colors.white,
+                color: titleColor,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -39,7 +44,7 @@ class CallsHeader extends StatelessWidget {
               'Расписание звонков на учебный день',
               style: Theme.of(
                 context,
-              ).textTheme.bodyMedium?.copyWith(color: Colors.white70),
+              ).textTheme.bodyMedium?.copyWith(color: subtitleColor),
             ),
           ],
         ),

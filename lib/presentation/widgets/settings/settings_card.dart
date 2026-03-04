@@ -62,7 +62,7 @@ class _SettingsCardState extends State<SettingsCard> with SingleTickerProviderSt
 
     final bg = cs.surface;
     final iconBg = isDark ? Colors.white.withOpacity(0.10) : Colors.black.withOpacity(0.06);
-    final iconColor = isDark ? Colors.white : cs.primary;
+    final iconColor = isDark ? Colors.white : Colors.black87;
 
     final titleStyle = theme.textTheme.titleMedium?.copyWith(
       fontWeight: FontWeight.w600,
