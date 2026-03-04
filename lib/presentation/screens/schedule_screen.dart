@@ -302,35 +302,58 @@ class _HeightPinnedHeaderDelegate extends SliverPersistentHeaderDelegate {
     
     final extraBlurPadding = 20.0; // Extend blur slightly below the top padding 
 
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        if (t == 0.0)
-          ColoredBox(color: backgroundColor),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final currentHeight = constraints.maxHeight;
+        // Calculate overscroll amount (how far down it's pulled past maxExtent)
+        final overscroll = currentHeight > maxHeight ? currentHeight - maxHeight : 0.0;
 
-        if (t > 0.0)
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: paddingTop + lerpDouble(16, 8 + extraBlurPadding, Curves.easeOutCubic.transform(t))!,
-            child: blurSigma > 0.1
-                ? ClipRect(
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
-                      child: ColoredBox(
-                        color: backgroundColor.withAlpha((overlayAlpha * 255).toInt()),
-                      ),
+        return Stack(
+          fit: StackFit.expand,
+          clipBehavior: Clip.none,
+          children: [
+            // Shift the entire header down visually by 'overscroll', 
+            // maintaining its original max size so it doesn't stretch out of proportion like a rubber band.
+            // This mimics the exact behavior of the generic header in OverviewScreen.
+            Positioned(
+              top: overscroll,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (t == 0.0)
+                    ColoredBox(color: backgroundColor),
+
+                  if (t > 0.0)
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      height: paddingTop + lerpDouble(16, 8 + extraBlurPadding, Curves.easeOutCubic.transform(t))!,
+                      child: blurSigma > 0.1
+                          ? ClipRect(
+                              child: BackdropFilter(
+                                filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
+                                child: ColoredBox(
+                                  color: backgroundColor.withAlpha((overlayAlpha * 255).toInt()),
+                                ),
+                              ),
+                            )
+                          : ColoredBox(color: backgroundColor.withAlpha((overlayAlpha * 255).toInt())),
                     ),
-                  )
-                : ColoredBox(color: backgroundColor.withAlpha((overlayAlpha * 255).toInt())),
-          ),
 
-        Padding(
-          padding: EdgeInsets.only(top: paddingTop),
-          child: child,
-        ),
-      ],
+                  Padding(
+                    padding: EdgeInsets.only(top: paddingTop),
+                    child: child,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
