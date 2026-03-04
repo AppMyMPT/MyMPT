@@ -630,6 +630,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      extendBodyBehindAppBar: true,
       body: SafeArea(
         bottom: false,
         child: SingleChildScrollView(

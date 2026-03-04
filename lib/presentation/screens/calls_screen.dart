@@ -27,6 +27,7 @@ class CallsScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: bg,
+      extendBodyBehindAppBar: true,
       body: SafeArea(
         bottom: false,
         child: SingleChildScrollView(
