@@ -14,7 +14,6 @@ class CallsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final cs = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
 
     final List<Call> callsData = CallsUtil.getCalls();
@@ -71,11 +70,6 @@ class CallsScreen extends StatelessWidget {
                     );
                   }),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '',
-                style: TextStyle(color: cs.onSurfaceVariant),
               ),
             ],
           ),

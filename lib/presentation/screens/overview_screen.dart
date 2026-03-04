@@ -312,11 +312,11 @@ class _OverviewScreenState extends State<OverviewScreen> {
                 ),
               ],
             ),
-            const Positioned(
+            Positioned(
               bottom: 60,
               left: 0,
               right: 0,
-              child: PageIndicator(currentPageIndex: 0),
+              child: PageIndicator(currentPageIndex: currentPageIndex),
             ),
           ],
         ),
