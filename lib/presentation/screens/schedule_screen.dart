@@ -2,6 +2,7 @@ import 'dart:ui' show ImageFilter, lerpDouble;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -276,7 +277,7 @@ class _HeightPinnedHeaderDelegate extends SliverPersistentHeaderDelegate {
 
   // We add this to make the header pull down along with the physics
   @override
-  bool get stretchConfiguration => null != StretchConfiguration();
+  OverScrollHeaderStretchConfiguration? get stretchConfiguration => OverScrollHeaderStretchConfiguration();
 
   @override
   bool shouldRebuild(covariant _HeightPinnedHeaderDelegate old) {
