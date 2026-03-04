@@ -16,9 +16,6 @@ class TeacherScheduleScreen extends StatefulWidget {
 }
 
 class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> {
-  static const _backgroundColor = Color(0xFF000000);
-  static const Color _lessonAccent = Colors.grey;
-
   final ScheduleRepository _repository = ScheduleRepository();
   Map<String, List<Schedule>> _weeklySchedule = {};
   bool _isLoading = true;
@@ -52,16 +49,6 @@ class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> {
     }
   }
 
-  List<Color> _getHeaderGradient(String weekType) {
-    if (weekType == 'Знаменатель') {
-      return const [Color(0xFF111111), Color(0xFF4FC3F7)];
-    } else if (weekType == 'Числитель') {
-      return const [Color(0xFF111111), Color(0xFFFF8C00)];
-    } else {
-      return const [Color(0xFF111111), Color(0xFF333333)];
-    }
-  }
-
   String _primaryBuilding(List<Schedule> schedule) {
     if (schedule.isEmpty) return '';
     final Map<String, int> counts = {};
@@ -85,30 +72,41 @@ class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> {
     final weekType = DateFormatter.getWeekType(now) ?? '';
     final days = _weeklySchedule.entries.toList();
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
+    final bgColor = theme.scaffoldBackgroundColor;
+    final fgColor = isDark ? Colors.white : Colors.black87;
+    final errorColor = isDark ? Colors.white.withValues(alpha: 0.8) : Colors.black87;
+    final hintColor = isDark ? Colors.white70 : Colors.black54;
+
+    // Use primary color of the theme as accent for the teacher's schedule lessons
+    final accentColor = isDark ? Colors.grey : Colors.grey.shade400;
+
     return Scaffold(
-      backgroundColor: _backgroundColor,
+      backgroundColor: bgColor,
       appBar: AppBar(
         title: Text(
           widget.teacherName,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
-            color: Colors.white,
+            color: fgColor,
           ),
           overflow: TextOverflow.ellipsis,
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(Icons.arrow_back, color: fgColor),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        backgroundColor: _backgroundColor,
+        backgroundColor: bgColor,
         elevation: 0,
         scrolledUnderElevation: 0,
         surfaceTintColor: Colors.transparent,
       ),
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: Colors.white),
+          ? Center(
+              child: CircularProgressIndicator(color: theme.colorScheme.primary),
             )
           : _loadError != null
               ? Center(
@@ -118,7 +116,7 @@ class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> {
                       Text(
                         _loadError!,
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.8),
+                          color: errorColor,
                           fontSize: 16,
                         ),
                         textAlign: TextAlign.center,
@@ -126,8 +124,8 @@ class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> {
                       const SizedBox(height: 16),
                       TextButton.icon(
                         onPressed: _loadSchedule,
-                        icon: const Icon(Icons.refresh, color: Colors.white70),
-                        label: const Text('Повторить', style: TextStyle(color: Colors.white70)),
+                        icon: Icon(Icons.refresh, color: hintColor),
+                        label: Text('Повторить', style: TextStyle(color: hintColor)),
                       ),
                     ],
                   ),
@@ -137,14 +135,14 @@ class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> {
                       child: Text(
                         'Нет занятий',
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.7),
+                          color: hintColor,
                           fontSize: 16,
                         ),
                       ),
                     )
                   : RefreshIndicator(
                       onRefresh: _loadSchedule,
-                      color: Colors.white,
+                      color: theme.colorScheme.primary,
                       child: ListView.builder(
                         padding: const EdgeInsets.only(bottom: 24),
                         physics: const AlwaysScrollableScrollPhysics(),
@@ -155,7 +153,7 @@ class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> {
                             title: day.key,
                             building: _primaryBuilding(day.value),
                             lessons: day.value,
-                            accentColor: _lessonAccent,
+                            accentColor: accentColor,
                             weekType: weekType,
                           );
                         },

@@ -19,9 +19,21 @@ void showLessonDetailSheet(
       : (displayStart.isNotEmpty ? displayStart : (displayEnd.isNotEmpty ? displayEnd : '—'));
   final teacherDisplayName = resolveTeacherFullName(lesson.teacher);
 
+  final theme = Theme.of(context);
+  final isDark = theme.brightness == Brightness.dark;
+  final cs = theme.colorScheme;
+
+  final bgColor = cs.surface;
+  final titleColor = isDark ? Colors.white : Colors.black87;
+  final subtitleColor = isDark ? Colors.white.withValues(alpha: 0.9) : Colors.black87;
+  final iconColor = isDark ? Colors.white70 : Colors.black54;
+
+  final buttonBg = isDark ? const Color(0xFF333333) : Colors.black.withOpacity(0.08);
+  final buttonFg = isDark ? Colors.white : Colors.black87;
+
   showModalBottomSheet<void>(
     context: context,
-    backgroundColor: const Color(0xFF1A1A1A),
+    backgroundColor: bgColor,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
@@ -34,22 +46,22 @@ void showLessonDetailSheet(
           children: [
             Text(
               lesson.subject,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
-                color: Colors.white,
+                color: titleColor,
               ),
             ),
             const SizedBox(height: 12),
             Row(
               children: [
-                Icon(Icons.access_time, size: 18, color: Colors.white70),
+                Icon(Icons.access_time, size: 18, color: iconColor),
                 const SizedBox(width: 8),
                 Text(
                   timeText,
                   style: TextStyle(
                     fontSize: 15,
-                    color: Colors.white.withValues(alpha: 0.9),
+                    color: subtitleColor,
                   ),
                 ),
               ],
@@ -57,14 +69,14 @@ void showLessonDetailSheet(
             const SizedBox(height: 8),
             Row(
               children: [
-                Icon(Icons.person_outline, size: 18, color: Colors.white70),
+                Icon(Icons.person_outline, size: 18, color: iconColor),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     teacherDisplayName,
                     style: TextStyle(
                       fontSize: 15,
-                      color: Colors.white.withValues(alpha: 0.9),
+                      color: subtitleColor,
                     ),
                   ),
                 ),
@@ -76,11 +88,11 @@ void showLessonDetailSheet(
                 Navigator.of(context).pop();
                 onViewTeacherSchedule();
               },
-              icon: const Icon(Icons.calendar_today_outlined, size: 20),
-              label: const Text('Посмотреть расписание преподавателя'),
+              icon: Icon(Icons.calendar_today_outlined, size: 20, color: buttonFg),
+              label: Text('Посмотреть расписание преподавателя', style: TextStyle(color: buttonFg)),
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF333333),
-                foregroundColor: Colors.white,
+                backgroundColor: buttonBg,
+                foregroundColor: buttonFg,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
