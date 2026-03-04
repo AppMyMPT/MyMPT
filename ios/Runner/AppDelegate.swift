@@ -1,6 +1,6 @@
 import Flutter
 import UIKit
-import flutter_local_notifications
+import UserNotifications
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
@@ -10,13 +10,25 @@ import flutter_local_notifications
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
 
-    // Required for flutter_local_notifications to show notifications in foreground
+    // Needed to show notifications while app is in foreground (FirebaseMessaging / local notifications)
     if #available(iOS 10.0, *) {
-      UNUserNotificationCenter.current().delegate = self as? UNUserNotificationCenterDelegate
+      UNUserNotificationCenter.current().delegate = self
     }
 
     GeneratedPluginRegistrant.register(with: self)
-    
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+
+  // Show notifications while app is in foreground
+  override func userNotificationCenter(
+    _ center: UNUserNotificationCenter,
+    willPresent notification: UNNotification,
+    withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+  ) {
+    if #available(iOS 14.0, *) {
+      completionHandler([.banner, .list, .sound, .badge])
+    } else {
+      completionHandler([.alert, .sound, .badge])
+    }
   }
 }
