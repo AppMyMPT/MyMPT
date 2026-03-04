@@ -17,6 +17,10 @@ class Location extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cs = theme.colorScheme;
+    
     // Определяем цвета в зависимости от названия здания
     Color borderColor = const Color(
       0xFFFF8C00,
@@ -46,15 +50,20 @@ class Location extends StatelessWidget {
       ); // Оранжевый для дистанционных занятий
     }
 
+    final bg = cs.surface;
+    final boxBorderColor = isDark ? borderColor : Colors.black.withValues(alpha: 0.06);
+    final shadowColor = isDark ? Colors.black.withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.04);
+    final textColor = isDark ? Colors.white : Colors.black87;
+
     final chip = Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFF111111),
+        color: bg,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: borderColor),
+        border: Border.all(color: boxBorderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
+            color: shadowColor,
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
@@ -74,9 +83,9 @@ class Location extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             displayLabel,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
-              color: Colors.white,
+              color: textColor,
               fontWeight: FontWeight.w500,
             ),
           ),
