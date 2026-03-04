@@ -27,11 +27,18 @@ class PageDot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final activeColor = isDark ? Colors.white : Colors.grey.shade600;
+    final inactiveColor = isDark 
+        ? Colors.white.withValues(alpha: 0.3) 
+        : Colors.grey.shade300;
+
     return Container(
       width: 8,
       height: 8,
       decoration: BoxDecoration(
-        color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.3),
+        color: isActive ? activeColor : inactiveColor,
         shape: BoxShape.circle,
       ),
     );
