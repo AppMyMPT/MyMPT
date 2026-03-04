@@ -4,6 +4,7 @@ import 'dart:io' show Platform;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:native_glass_navbar/native_glass_navbar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -70,6 +71,7 @@ class MyApp extends StatelessWidget {
       appBarTheme: const AppBarTheme(
         foregroundColor: Colors.white,
         elevation: 0,
+        systemOverlayStyle: SystemUiOverlayStyle.light,
       ),
       navigationBarTheme: NavigationBarThemeData(
         indicatorColor: const Color(0x33FFFFFF),
@@ -115,6 +117,7 @@ class MyApp extends StatelessWidget {
         foregroundColor: Colors.black87,
         elevation: 0,
         backgroundColor: Color(0xFFFFFFFF), // Белый фон
+        systemOverlayStyle: SystemUiOverlayStyle.dark,
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: const Color(0xFFF5F5F5),
@@ -357,29 +360,32 @@ class _MainScreenState extends State<MainScreen> {
       );
     }
 
-    return Scaffold(
-      extendBody: true,
-      body: Stack(
-        children: [
-          PageView(
-            controller: _pageController,
-            onPageChanged: (index) {
-              setState(() => _currentIndex = index);
-            },
-            children: _screens,
-          ),
-          if (_currentIndex == 0 || _currentIndex == 1)
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: MediaQuery.of(context).padding.bottom + indicatorBottomOffset,
-              child: IgnorePointer(
-                child: PageIndicator(currentPageIndex: _currentIndex),
-              ),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+      child: Scaffold(
+        extendBody: true,
+        body: Stack(
+          children: [
+            PageView(
+              controller: _pageController,
+              onPageChanged: (index) {
+                setState(() => _currentIndex = index);
+              },
+              children: _screens,
             ),
-        ],
+            if (_currentIndex == 0 || _currentIndex == 1)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: MediaQuery.of(context).padding.bottom + indicatorBottomOffset,
+                child: IgnorePointer(
+                  child: PageIndicator(currentPageIndex: _currentIndex),
+                ),
+              ),
+          ],
+        ),
+        bottomNavigationBar: bottomNavigationBar,
       ),
-      bottomNavigationBar: bottomNavigationBar,
     );
   }
 }
