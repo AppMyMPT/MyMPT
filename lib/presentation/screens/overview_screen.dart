@@ -32,7 +32,6 @@ class OverviewScreen extends StatefulWidget {
 }
 
 class _OverviewScreenState extends State<OverviewScreen> {
-  static const backgroundColor = Color(0xFF000000);
   static const Color lessonAccent = Colors.grey;
 
   late final ScheduleRepository repository;
@@ -235,18 +234,24 @@ class _OverviewScreenState extends State<OverviewScreen> {
     } catch (_) {}
   }
 
-  List<Color> getHeaderGradient(String weekType) {
+  List<Color> getHeaderGradient(String weekType, {required bool isDark}) {
+    final base = isDark ? const Color(0xFF111111) : const Color(0xFFFFFFFF);
+
     if (weekType == 'Знаменатель') {
-      return const [Color(0xFF111111), Color(0xFF4FC3F7)];
+      return [base, const Color(0xFF4FC3F7)];
     } else if (weekType == 'Числитель') {
-      return const [Color(0xFF111111), Color(0xFFFF8C00)];
+      return [base, const Color(0xFFFF8C00)];
     } else {
-      return const [Color(0xFF111111), Color(0xFF333333)];
+      return [base, isDark ? const Color(0xFF333333) : const Color(0xFFE6E6E6)];
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final bg = Theme.of(context).scaffoldBackgroundColor;
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     final hasCachedData = todayScheduleData.isNotEmpty || tomorrowScheduleData.isNotEmpty;
     final isInitialLoading = isLoading && !hasCachedData;
 
@@ -254,10 +259,10 @@ class _OverviewScreenState extends State<OverviewScreen> {
 
     if (isInitialLoading) {
       return Scaffold(
-        backgroundColor: backgroundColor,
-        body: const SafeArea(
+        backgroundColor: bg,
+        body: SafeArea(
           bottom: false,
-          child: Center(child: CircularProgressIndicator(color: Colors.white)),
+          child: Center(child: CircularProgressIndicator(color: cs.primary)),
         ),
       );
     }
@@ -266,20 +271,24 @@ class _OverviewScreenState extends State<OverviewScreen> {
       final pageTitle = forcedPage == 0 ? 'Сегодня' : 'Завтра';
       final scheduleData = forcedPage == 0 ? todayScheduleData : tomorrowScheduleData;
       return Scaffold(
-        backgroundColor: backgroundColor,
+        backgroundColor: bg,
         body: SafeArea(
           bottom: false,
           child: RefreshIndicator(
             onRefresh: () => fetchScheduleData(forceRefresh: true, userInitiated: true),
-            color: Colors.white,
-            child: buildSchedulePage(scheduleData, pageTitle),
+            color: cs.primary,
+            child: buildSchedulePage(
+              scheduleData,
+              pageTitle,
+              isDark: isDark,
+            ),
           ),
         ),
       );
     }
 
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: bg,
       body: SafeArea(
         bottom: false,
         child: Stack(
@@ -293,21 +302,21 @@ class _OverviewScreenState extends State<OverviewScreen> {
               children: [
                 RefreshIndicator(
                   onRefresh: () => fetchScheduleData(forceRefresh: true, userInitiated: true),
-                  color: Colors.white,
-                  child: buildSchedulePage(todayScheduleData, 'Сегодня'),
+                  color: cs.primary,
+                  child: buildSchedulePage(todayScheduleData, 'Сегодня', isDark: isDark),
                 ),
                 RefreshIndicator(
                   onRefresh: () => fetchScheduleData(forceRefresh: true, userInitiated: true),
-                  color: Colors.white,
-                  child: buildSchedulePage(tomorrowScheduleData, 'Завтра'),
+                  color: cs.primary,
+                  child: buildSchedulePage(tomorrowScheduleData, 'Завтра', isDark: isDark),
                 ),
               ],
             ),
-            Positioned(
-              bottom: 60, // Сдвигаем индикатор страниц чуть выше над навбаром
+            const Positioned(
+              bottom: 60,
               left: 0,
               right: 0,
-              child: PageIndicator(currentPageIndex: currentPageIndex),
+              child: PageIndicator(currentPageIndex: 0),
             ),
           ],
         ),
@@ -315,7 +324,11 @@ class _OverviewScreenState extends State<OverviewScreen> {
     );
   }
 
-  Widget buildSchedulePage(List<Schedule> scheduleData, String pageTitle) {
+  Widget buildSchedulePage(List<Schedule> scheduleData, String pageTitle, {required bool isDark}) {
+    final cs = Theme.of(context).colorScheme;
+    final onSurface = cs.onSurface;
+    final onSurfaceV = cs.onSurfaceVariant;
+
     final targetDate =
         pageTitle == 'Сегодня' ? DateTime.now() : DateTime.now().add(const Duration(days: 1));
     final weekType = getWeekTypeForDate(targetDate);
@@ -341,14 +354,14 @@ class _OverviewScreenState extends State<OverviewScreen> {
     final canOpen = _canOpenBuilding(building);
 
     return CustomScrollView(
-      physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()), // Оптимизация для iOS
+      physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
       slivers: [
         SliverToBoxAdapter(
           child: _StaticOverviewHeader(
             title: pageTitle,
             dateLabel: dateLabel,
             weekType: weekType ?? '',
-            gradient: getHeaderGradient(weekType ?? ''),
+            gradient: getHeaderGradient(weekType ?? '', isDark: isDark),
             isOffline: isOffline,
           ),
         ),
@@ -365,10 +378,10 @@ class _OverviewScreenState extends State<OverviewScreen> {
                       Expanded(
                         child: Text(
                           pageTitle,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w600,
-                            color: Colors.white,
+                            color: onSurface,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -404,21 +417,21 @@ class _OverviewScreenState extends State<OverviewScreen> {
                               Icon(
                                 Icons.weekend_outlined,
                                 size: 64,
-                                color: Colors.white.withValues(alpha: 0.3),
+                                color: onSurface.withOpacity(0.30),
                               ),
                               const SizedBox(height: 16),
                               Text(
                                 '$pageTitle выходной',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.white70,
+                                  color: onSurface.withOpacity(0.80),
                                 ),
                               ),
                               const SizedBox(height: 8),
-                              const Text(
+                              Text(
                                 'Нет запланированных занятий',
-                                style: const TextStyle(fontSize: 16, color: Colors.white54),
+                                style: TextStyle(fontSize: 16, color: onSurfaceV),
                               ),
                             ],
                           ),
@@ -492,14 +505,14 @@ class _OverviewScreenState extends State<OverviewScreen> {
                       ],
                       if (filteredChanges.isNotEmpty) ...[
                         const SizedBox(height: 30),
-                        const Divider(color: Color(0xFF333333), thickness: 1),
+                        Divider(color: cs.outlineVariant.withOpacity(0.8), thickness: 1),
                         const SizedBox(height: 20),
-                        const Text(
+                        Text(
                           'Изменения в расписании',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
-                            color: Colors.white,
+                            color: onSurface,
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -756,6 +769,10 @@ class _StaticOverviewHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final titleColor = isDark ? Colors.white : Colors.black87;
+    final subColor = isDark ? Colors.white70 : Colors.black54;
+
     const radius = 32.0;
     const padH = 20.0;
     const padTop = 18.0;
@@ -789,10 +806,9 @@ class _StaticOverviewHeader extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          // Уменьшено количество теней для оптимизации
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.3),
+              color: Colors.black.withOpacity(isDark ? 0.30 : 0.10),
               blurRadius: 15,
               offset: const Offset(0, 8),
             ),
@@ -815,10 +831,10 @@ class _StaticOverviewHeader extends StatelessWidget {
                         title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: titleSize,
                           fontWeight: FontWeight.w700,
-                          color: Colors.white,
+                          color: titleColor,
                         ),
                       ),
                       const SizedBox(height: gapTitleDate),
@@ -826,9 +842,9 @@ class _StaticOverviewHeader extends StatelessWidget {
                         dateLabel,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: dateSize,
-                          color: Colors.white70,
+                          color: subColor,
                         ),
                       ),
                     ],
@@ -849,7 +865,7 @@ class _StaticOverviewHeader extends StatelessWidget {
                     child: Icon(
                       Icons.wifi_off,
                       size: iconSize,
-                      color: Colors.white.withValues(alpha: 0.85),
+                      color: titleColor.withOpacity(0.85),
                     ),
                   ),
                 ),
@@ -877,12 +893,18 @@ class _WeekTypePill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final bg = isDark ? Colors.white.withOpacity(0.10) : Colors.black.withOpacity(0.06);
+    final border = isDark ? Colors.white.withOpacity(0.12) : Colors.black.withOpacity(0.08);
+    final fg = isDark ? Colors.white : Colors.black87;
+
     return Container(
       padding: EdgeInsets.symmetric(horizontal: padH, vertical: padV),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.10),
+        color: bg,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+        border: Border.all(color: border),
       ),
       child: Text(
         text,
@@ -892,7 +914,7 @@ class _WeekTypePill extends StatelessWidget {
           fontSize: fontSize,
           fontWeight: FontWeight.w600,
           letterSpacing: 0.3,
-          color: Colors.white,
+          color: fg,
         ),
       ),
     );

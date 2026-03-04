@@ -56,19 +56,24 @@ class _SettingsCardState extends State<SettingsCard> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
-    final bg = cs.surface;
-    final iconBg = cs.primary.withOpacity(0.12);
-    final iconColor = cs.primary;
+    final bg = isDark ? const Color(0xFF111111) : const Color(0xFFF5F5F5);
+    final iconBg = isDark ? Colors.white.withOpacity(0.10) : Colors.black.withOpacity(0.06);
+    final iconColor = isDark ? Colors.white : cs.primary;
 
-    final titleStyle = Theme.of(context).textTheme.titleMedium?.copyWith(
-          fontWeight: FontWeight.w600,
-          color: cs.onSurface,
-        );
-    final subtitleStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: cs.onSurfaceVariant,
-        );
+    final titleStyle = theme.textTheme.titleMedium?.copyWith(
+      fontWeight: FontWeight.w600,
+      color: isDark ? Colors.white : cs.onSurface,
+    );
+    final subtitleStyle = theme.textTheme.bodySmall?.copyWith(
+      color: isDark ? Colors.white70 : cs.onSurfaceVariant,
+    );
+
+    final chevronColor = isDark ? Colors.white54 : cs.onSurfaceVariant.withOpacity(0.8);
+    final progressColor = isDark ? Colors.white : cs.onSurface.withOpacity(0.7);
 
     return Material(
       color: Colors.transparent,
@@ -114,13 +119,13 @@ class _SettingsCardState extends State<SettingsCard> with SingleTickerProviderSt
                       height: 16,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: cs.onSurface.withOpacity(0.7),
+                        color: progressColor,
                       ),
                     )
                   : Icon(
                       widget.onTap != null ? Icons.arrow_forward_ios : null,
                       size: 16,
-                      color: cs.onSurfaceVariant.withOpacity(0.8),
+                      color: chevronColor,
                     ),
             ],
           ),

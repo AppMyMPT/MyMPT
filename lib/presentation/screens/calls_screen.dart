@@ -8,19 +8,24 @@ import 'package:my_mpt/presentation/widgets/calls/call_timeline_tile.dart';
 class CallsScreen extends StatelessWidget {
   const CallsScreen({super.key});
 
-  static const _backgroundColor = Color(0xFF000000);
-
   static const _numeratorColor = Color(0xFFFF8C00);
   static const _denominatorColor = Color(0xFF4FC3F7);
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
     final List<Call> callsData = CallsUtil.getCalls();
     final weekType = DateFormatter.getWeekType(DateTime.now());
     final accentColor = weekType == 'Знаменатель' ? _denominatorColor : _numeratorColor;
 
+    final cardBg = isDark ? const Color(0xFF111111) : const Color(0xFFF5F5F5);
+    final shadow = isDark ? Colors.black.withOpacity(0.45) : Colors.black.withOpacity(0.10);
+
     return Scaffold(
-      backgroundColor: _backgroundColor,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         bottom: false,
         child: SingleChildScrollView(
@@ -36,11 +41,11 @@ class CallsScreen extends StatelessWidget {
                   vertical: 24,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF111111),
+                  color: cardBg,
                   borderRadius: BorderRadius.circular(28),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.45),
+                      color: shadow,
                       blurRadius: 30,
                       offset: const Offset(0, 18),
                     ),
@@ -66,6 +71,11 @@ class CallsScreen extends StatelessWidget {
                     );
                   }),
                 ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '',
+                style: TextStyle(color: cs.onSurfaceVariant),
               ),
             ],
           ),

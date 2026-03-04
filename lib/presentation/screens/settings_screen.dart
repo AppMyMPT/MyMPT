@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart'; // Добавлен импорт для kDebugMode
+import 'package:flutter/foundation.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -18,6 +18,7 @@ import 'package:my_mpt/domain/repositories/specialty_repository_interface.dart';
 import 'package:my_mpt/presentation/widgets/settings/error_notification.dart';
 import 'package:my_mpt/presentation/widgets/settings/info_notification.dart';
 import 'package:my_mpt/presentation/widgets/settings/settings_card.dart';
+import 'package:my_mpt/presentation/widgets/settings/settings_header.dart';
 import 'package:my_mpt/presentation/widgets/settings/success_notification.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -69,7 +70,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _repository = ScheduleRepository();
 
     _repository.dataUpdatedNotifier.addListener(_onScheduleDataUpdated);
-
     AppThemeService.themeMode.addListener(_onThemeChanged);
 
     _loadSpecialties();
@@ -108,9 +108,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       } else if (_repository.lastUpdate != null) {
         setState(() => _lastUpdate = _repository.lastUpdate);
       }
-    } catch (_) {
-      // Игнорируем ошибки при обновлении данных
-    }
+    } catch (_) {}
   }
 
   String _formatElapsed(Duration d) {
@@ -126,9 +124,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       setState(() {
         _appVersion = info.version;
       });
-    } catch (e) {
-      // Игнорируем ошибки загрузки версии приложения
-    }
+    } catch (e) {}
   }
 
   Future<void> _loadSpecialties() async {
@@ -204,9 +200,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           }
         }
       });
-    } catch (e) {
-      // Игнорируем ошибки при загрузке предпочтений
-    }
+    } catch (e) {}
   }
 
   String _getLastUpdateText() {
@@ -328,15 +322,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       title,
       style: Theme.of(context).textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w700,
-          ),
-    );
-  }
-
-  Widget _header() {
-    return Text(
-      'Настройки',
-      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-            fontWeight: FontWeight.w800,
           ),
     );
   }
@@ -652,7 +637,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _header(),
+              const SettingsHeader(),
               const SizedBox(height: 28),
               if (_selectedRole == 'student') ...[
                 _sectionTitle('Учебная группа'),
