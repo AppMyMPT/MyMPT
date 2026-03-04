@@ -61,7 +61,7 @@ class MyApp extends StatelessWidget {
         primary: Color(0xFFFF8C00),
         secondary: Color(0xFFFFA500),
         tertiary: Color(0xFFFFB347),
-        surface: Color(0xFF121212),
+        surface: Color(0xFF111111),
       ),
       textTheme: ThemeData.dark().textTheme.apply(
             bodyColor: Colors.white,
@@ -105,7 +105,7 @@ class MyApp extends StatelessWidget {
       useMaterial3: true,
       brightness: Brightness.light,
       fontFamily: 'Roboto',
-      scaffoldBackgroundColor: const Color(0xFFFFFFFF),
+      scaffoldBackgroundColor: const Color(0xFFF2F2F7),
       colorScheme: cs,
       textTheme: ThemeData.light().textTheme.apply(
             bodyColor: Colors.black87,
@@ -114,8 +114,10 @@ class MyApp extends StatelessWidget {
       appBarTheme: const AppBarTheme(
         foregroundColor: Colors.black87,
         elevation: 0,
+        backgroundColor: Color(0xFFF2F2F7),
       ),
       navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: const Color(0xFFFFFFFF),
         indicatorColor: Colors.black.withOpacity(0.06),
         height: 80,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
@@ -266,8 +268,8 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator(color: Colors.white)),
+      return Scaffold(
+        body: Center(child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary)),
       );
     }
 
@@ -295,7 +297,6 @@ class _MainScreenState extends State<MainScreen> {
         isNumerator ? const Color(0xFFFF8C00) : const Color(0xFF42A5F5);
 
     final bool isIOS = !kIsWeb && Platform.isIOS;
-    // Уменьшаем отступ для iOS (60 вместо 100), чтобы кружочки страниц были ближе к навбару
     final double indicatorBottomOffset = isIOS ? 60 : (80 + 10);
 
     Widget? bottomNavigationBar;
@@ -320,13 +321,11 @@ class _MainScreenState extends State<MainScreen> {
         ],
       );
     } else {
-      // Стандартный Android Material 3 NavigationBar (до всяких "glass" экспериментов)
       bottomNavigationBar = ClipRRect(
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         child: Theme(
           data: Theme.of(context).copyWith(
             navigationBarTheme: Theme.of(context).navigationBarTheme.copyWith(
-              // Делаем цвет выделения динамическим (синий/оранжевый) с прозрачностью
               indicatorColor: activeColor.withOpacity(0.25),
             ),
           ),
