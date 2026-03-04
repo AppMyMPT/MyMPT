@@ -249,8 +249,9 @@ class _OverviewScreenState extends State<OverviewScreen> {
   @override
   Widget build(BuildContext context) {
     final bg = Theme.of(context).scaffoldBackgroundColor;
-    final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    final progressColor = isDark ? Colors.white : Colors.grey;
 
     final hasCachedData = todayScheduleData.isNotEmpty || tomorrowScheduleData.isNotEmpty;
     final isInitialLoading = isLoading && !hasCachedData;
@@ -262,7 +263,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
         backgroundColor: bg,
         body: SafeArea(
           bottom: false,
-          child: Center(child: CircularProgressIndicator(color: cs.primary)),
+          child: Center(child: CircularProgressIndicator(color: progressColor)),
         ),
       );
     }
@@ -276,7 +277,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
           bottom: false,
           child: RefreshIndicator(
             onRefresh: () => fetchScheduleData(forceRefresh: true, userInitiated: true),
-            color: cs.primary,
+            color: progressColor,
             child: buildSchedulePage(
               scheduleData,
               pageTitle,
@@ -302,12 +303,12 @@ class _OverviewScreenState extends State<OverviewScreen> {
               children: [
                 RefreshIndicator(
                   onRefresh: () => fetchScheduleData(forceRefresh: true, userInitiated: true),
-                  color: cs.primary,
+                  color: progressColor,
                   child: buildSchedulePage(todayScheduleData, 'Сегодня', isDark: isDark),
                 ),
                 RefreshIndicator(
                   onRefresh: () => fetchScheduleData(forceRefresh: true, userInitiated: true),
-                  color: cs.primary,
+                  color: progressColor,
                   child: buildSchedulePage(tomorrowScheduleData, 'Завтра', isDark: isDark),
                 ),
               ],
