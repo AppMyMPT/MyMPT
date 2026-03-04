@@ -224,10 +224,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bg = Theme.of(context).scaffoldBackgroundColor;
+    
     return Scaffold(
-      backgroundColor: const Color(0xFF000000),
+      backgroundColor: bg,
       body: Container(
-        color: const Color(0xFF000000),
+        color: bg,
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
@@ -256,6 +258,14 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   }
 
   Widget _buildWelcomePage() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryTextColor = isDark ? Colors.white : Colors.black87;
+    final secondaryTextColor = isDark ? Colors.white70 : Colors.black54;
+    final iconBgColor = isDark ? Colors.white : Colors.black;
+    final iconColor = isDark ? Colors.black : Colors.white;
+    final btnBg = isDark ? Colors.white : Colors.black;
+    final btnFg = isDark ? Colors.black : Colors.white;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -264,44 +274,44 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             width: 120,
             height: 120,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: iconBgColor,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.white.withValues(alpha: 0.3),
+                  color: iconBgColor.withValues(alpha: 0.3),
                   blurRadius: 20,
                   spreadRadius: 5,
                 ),
               ],
             ),
-            child: const Center(
-              child: Icon(Icons.school, size: 60, color: Colors.black),
+            child: Center(
+              child: Icon(Icons.school, size: 60, color: iconColor),
             ),
           ),
           const SizedBox(height: 40),
-          const Text(
+          Text(
             'Добро пожаловать в',
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.w300,
-              color: Colors.white,
+              color: primaryTextColor,
             ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             '"Мой МПТ"',
             style: TextStyle(
               fontSize: 32,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: primaryTextColor,
             ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 30),
-          const Text(
+          Text(
             'Мы рады, что вы выбрали именно этот техникум. Мы разработали это приложение, чтобы вам было более комфортно смотреть расписание.',
-            style: TextStyle(fontSize: 16, color: Colors.white70, height: 1.5),
+            style: TextStyle(fontSize: 16, color: secondaryTextColor, height: 1.5),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 50),
@@ -315,17 +325,17 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 });
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.black,
+                backgroundColor: btnBg,
+                foregroundColor: btnFg,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(25),
                 ),
                 elevation: 5,
               ),
-              child: const Text(
+              child: Text(
                 'Отлично',
                 style: TextStyle(
-                  color: Colors.black,
+                  color: btnFg,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
@@ -338,22 +348,28 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   }
 
   Widget _buildRoleSelectionPage() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryTextColor = isDark ? Colors.white : Colors.black87;
+    final secondaryTextColor = isDark ? Colors.white70 : Colors.black54;
+    final btnBg = isDark ? Colors.white : Colors.black;
+    final btnFg = isDark ? Colors.black : Colors.white;
+
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Text(
+        Text(
           'Кто вы?',
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: primaryTextColor,
           ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 10),
-        const Text(
+        Text(
           'Выберите версию для отображения расписания',
-          style: TextStyle(fontSize: 16, color: Colors.white70),
+          style: TextStyle(fontSize: 16, color: secondaryTextColor),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 40),
@@ -386,17 +402,17 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: Colors.black,
+              backgroundColor: btnBg,
+              foregroundColor: btnFg,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(25),
               ),
               elevation: 5,
             ),
-            child: const Text(
+            child: Text(
               'Продолжить',
               style: TextStyle(
-                color: Colors.black,
+                color: btnFg,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -411,11 +427,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             });
           },
           style: ButtonStyle(
-            overlayColor: WidgetStateProperty.all<Color>(Colors.white30),
+            overlayColor: WidgetStateProperty.all<Color>(isDark ? Colors.white30 : Colors.black12),
           ),
-          child: const Text(
+          child: Text(
             'Назад',
-            style: TextStyle(color: Colors.white70, fontSize: 16),
+            style: TextStyle(color: secondaryTextColor, fontSize: 16),
           ),
         ),
       ],
@@ -423,8 +439,18 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   }
 
   Widget _buildRoleOption({required String title, required IconData icon, required String value}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isSelected = _selectedRole == value;
     
+    final unselectedBg = isDark ? const Color(0xFF111111) : const Color(0xFFF5F5F5);
+    final selectedBg = isDark ? Colors.white.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.05);
+    
+    final unselectedBorder = isDark ? Colors.white24 : Colors.black12;
+    final selectedBorder = isDark ? Colors.white : Colors.black;
+    
+    final unselectedText = isDark ? Colors.white70 : Colors.black54;
+    final selectedText = isDark ? Colors.white : Colors.black87;
+
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -435,10 +461,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         duration: const Duration(milliseconds: 200),
         height: 80,
         decoration: BoxDecoration(
-          color: isSelected ? Colors.white.withValues(alpha: 0.15) : const Color(0xFF111111),
+          color: isSelected ? selectedBg : unselectedBg,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? Colors.white : Colors.white24,
+            color: isSelected ? selectedBorder : unselectedBorder,
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -447,7 +473,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             const SizedBox(width: 20),
             Icon(
               icon, 
-              color: isSelected ? Colors.white : Colors.white70,
+              color: isSelected ? selectedText : unselectedText,
               size: 32,
             ),
             const SizedBox(width: 20),
@@ -456,14 +482,14 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected ? Colors.white : Colors.white70,
+                color: isSelected ? selectedText : unselectedText,
               ),
             ),
             const Spacer(),
             if (isSelected)
-              const Padding(
-                padding: EdgeInsets.only(right: 20),
-                child: Icon(Icons.check_circle, color: Colors.white),
+              Padding(
+                padding: const EdgeInsets.only(right: 20),
+                child: Icon(Icons.check_circle, color: selectedText),
               ),
           ],
         ),
@@ -472,15 +498,23 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   }
 
   Widget _buildSpecialtySelectionPage() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryTextColor = isDark ? Colors.white : Colors.black87;
+    final secondaryTextColor = isDark ? Colors.white70 : Colors.black54;
+    final btnBg = isDark ? Colors.white : Colors.black;
+    final btnFg = isDark ? Colors.black : Colors.white;
+    final dropdownBg = isDark ? const Color(0xFF111111) : const Color(0xFFF5F5F5);
+    final borderColor = isDark ? Colors.white24 : Colors.black12;
+
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Text(
+        Text(
           'Выберите свою специальность',
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: primaryTextColor,
           ),
           textAlign: TextAlign.center,
         ),
@@ -489,17 +523,17 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           height: 50,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: const Color(0xFF111111),
+            color: dropdownBg,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white24),
+            border: Border.all(color: borderColor),
           ),
           child: _isLoading
-              ? const Center(
+              ? Center(
                   child: SizedBox(
                     width: 20,
                     height: 20,
                     child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      valueColor: AlwaysStoppedAnimation<Color>(primaryTextColor),
                       strokeWidth: 2,
                     ),
                   ),
@@ -507,16 +541,16 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               : DropdownButtonHideUnderline(
                   child: DropdownButton<data_model.Specialty>(
                     value: _selectedSpecialty,
-                    hint: const Text(
+                    hint: Text(
                       'Выберите специальность',
-                      style: TextStyle(color: Colors.white70),
+                      style: TextStyle(color: secondaryTextColor),
                     ),
                     items: _specialties.map((data_model.Specialty specialty) {
                       return DropdownMenuItem<data_model.Specialty>(
                         value: specialty,
                         child: Text(
                           specialty.name,
-                          style: const TextStyle(color: Colors.white),
+                          style: TextStyle(color: primaryTextColor),
                         ),
                       );
                     }).toList(),
@@ -526,10 +560,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       });
                     },
                     isExpanded: true,
-                    dropdownColor: const Color(0xFF111111),
-                    icon: const Icon(
+                    dropdownColor: dropdownBg,
+                    icon: Icon(
                       Icons.arrow_drop_down,
-                      color: Colors.white,
+                      color: primaryTextColor,
                     ),
                   ),
                 ),
@@ -548,19 +582,19 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   }
                 : null,
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: Colors.black,
+              backgroundColor: btnBg,
+              foregroundColor: btnFg,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(25),
               ),
               elevation: 5,
-              disabledBackgroundColor: Colors.white.withValues(alpha: 0.5),
-              disabledForegroundColor: Colors.black.withValues(alpha: 0.5),
+              disabledBackgroundColor: btnBg.withValues(alpha: 0.5),
+              disabledForegroundColor: btnFg.withValues(alpha: 0.5),
             ),
-            child: const Text(
+            child: Text(
               'Продолжить',
               style: TextStyle(
-                color: Colors.black,
+                color: btnFg,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -575,11 +609,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             });
           },
           style: ButtonStyle(
-            overlayColor: WidgetStateProperty.all<Color>(Colors.white30),
+            overlayColor: WidgetStateProperty.all<Color>(isDark ? Colors.white30 : Colors.black12),
           ),
-          child: const Text(
+          child: Text(
             'Назад',
-            style: TextStyle(color: Colors.white70, fontSize: 16),
+            style: TextStyle(color: secondaryTextColor, fontSize: 16),
           ),
         ),
       ],
@@ -587,15 +621,23 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   }
 
   Widget _buildGroupSelectionPage() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryTextColor = isDark ? Colors.white : Colors.black87;
+    final secondaryTextColor = isDark ? Colors.white70 : Colors.black54;
+    final btnBg = isDark ? Colors.white : Colors.black;
+    final btnFg = isDark ? Colors.black : Colors.white;
+    final dropdownBg = isDark ? const Color(0xFF111111) : const Color(0xFFF5F5F5);
+    final borderColor = isDark ? Colors.white24 : Colors.black12;
+
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Text(
+        Text(
           'Выберите свою группу',
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: primaryTextColor,
           ),
           textAlign: TextAlign.center,
         ),
@@ -604,17 +646,17 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           height: 50,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: const Color(0xFF111111),
+            color: dropdownBg,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white24),
+            border: Border.all(color: borderColor),
           ),
           child: _isGroupsLoading
-              ? const Center(
+              ? Center(
                   child: SizedBox(
                     width: 20,
                     height: 20,
                     child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      valueColor: AlwaysStoppedAnimation<Color>(primaryTextColor),
                       strokeWidth: 2,
                     ),
                   ),
@@ -622,16 +664,16 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               : DropdownButtonHideUnderline(
                   child: DropdownButton<Group>(
                     value: _selectedGroup,
-                    hint: const Text(
+                    hint: Text(
                       'Выберите группу',
-                      style: TextStyle(color: Colors.white70),
+                      style: TextStyle(color: secondaryTextColor),
                     ),
                     items: _groups.map((Group group) {
                       return DropdownMenuItem<Group>(
                         value: group,
                         child: Text(
                           group.code,
-                          style: const TextStyle(color: Colors.white),
+                          style: TextStyle(color: primaryTextColor),
                         ),
                       );
                     }).toList(),
@@ -641,19 +683,19 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       });
                     },
                     isExpanded: true,
-                    dropdownColor: const Color(0xFF111111),
-                    icon: const Icon(
+                    dropdownColor: dropdownBg,
+                    icon: Icon(
                       Icons.arrow_drop_down,
-                      color: Colors.white,
+                      color: primaryTextColor,
                     ),
                   ),
                 ),
         ),
         const SizedBox(height: 20),
-        const Text(
+        Text(
           'Поменять группу можно в настройках',
           textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.white70, fontSize: 14),
+          style: TextStyle(color: secondaryTextColor, fontSize: 14),
         ),
         const SizedBox(height: 30),
         SizedBox(
@@ -662,19 +704,19 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           child: ElevatedButton(
             onPressed: _selectedGroup != null ? _saveSelectionAndProceed : null,
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: Colors.black,
+              backgroundColor: btnBg,
+              foregroundColor: btnFg,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(25),
               ),
               elevation: 5,
-              disabledBackgroundColor: Colors.white.withValues(alpha: 0.5),
-              disabledForegroundColor: Colors.black.withValues(alpha: 0.5),
+              disabledBackgroundColor: btnBg.withValues(alpha: 0.5),
+              disabledForegroundColor: btnFg.withValues(alpha: 0.5),
             ),
-            child: const Text(
+            child: Text(
               'Готово',
               style: TextStyle(
-                color: Colors.black,
+                color: btnFg,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -689,11 +731,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             });
           },
           style: ButtonStyle(
-            overlayColor: WidgetStateProperty.all<Color>(Colors.white30),
+            overlayColor: WidgetStateProperty.all<Color>(isDark ? Colors.white30 : Colors.black12),
           ),
-          child: const Text(
+          child: Text(
             'Назад',
-            style: TextStyle(color: Colors.white70, fontSize: 16),
+            style: TextStyle(color: secondaryTextColor, fontSize: 16),
           ),
         ),
       ],
@@ -701,15 +743,23 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   }
 
   Widget _buildTeacherSelectionPage() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryTextColor = isDark ? Colors.white : Colors.black87;
+    final secondaryTextColor = isDark ? Colors.white70 : Colors.black54;
+    final btnBg = isDark ? Colors.white : Colors.black;
+    final btnFg = isDark ? Colors.black : Colors.white;
+    final dropdownBg = isDark ? const Color(0xFF111111) : const Color(0xFFF5F5F5);
+    final borderColor = isDark ? Colors.white24 : Colors.black12;
+
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Text(
+        Text(
           'Выберите преподавателя',
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: primaryTextColor,
           ),
           textAlign: TextAlign.center,
         ),
@@ -718,17 +768,17 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           height: 50,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: const Color(0xFF111111),
+            color: dropdownBg,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white24),
+            border: Border.all(color: borderColor),
           ),
           child: _isTeachersLoading
-              ? const Center(
+              ? Center(
                   child: SizedBox(
                     width: 20,
                     height: 20,
                     child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      valueColor: AlwaysStoppedAnimation<Color>(primaryTextColor),
                       strokeWidth: 2,
                     ),
                   ),
@@ -736,16 +786,16 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               : DropdownButtonHideUnderline(
                   child: DropdownButton<Teacher>(
                     value: _selectedTeacher,
-                    hint: const Text(
+                    hint: Text(
                       'Выберите преподавателя',
-                      style: TextStyle(color: Colors.white70),
+                      style: TextStyle(color: secondaryTextColor),
                     ),
                     items: _teachers.map((Teacher teacher) {
                       return DropdownMenuItem<Teacher>(
                         value: teacher,
                         child: Text(
                           teacher.teacherName,
-                          style: const TextStyle(color: Colors.white),
+                          style: TextStyle(color: primaryTextColor),
                         ),
                       );
                     }).toList(),
@@ -755,19 +805,19 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       });
                     },
                     isExpanded: true,
-                    dropdownColor: const Color(0xFF111111),
-                    icon: const Icon(
+                    dropdownColor: dropdownBg,
+                    icon: Icon(
                       Icons.arrow_drop_down,
-                      color: Colors.white,
+                      color: primaryTextColor,
                     ),
                   ),
                 ),
         ),
         const SizedBox(height: 20),
-        const Text(
+        Text(
           'Изменить версию и преподавателя можно в настройках',
           textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.white70, fontSize: 14),
+          style: TextStyle(color: secondaryTextColor, fontSize: 14),
         ),
         const SizedBox(height: 30),
         SizedBox(
@@ -776,19 +826,19 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           child: ElevatedButton(
             onPressed: _selectedTeacher != null ? _saveSelectionAndProceed : null,
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: Colors.black,
+              backgroundColor: btnBg,
+              foregroundColor: btnFg,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(25),
               ),
               elevation: 5,
-              disabledBackgroundColor: Colors.white.withValues(alpha: 0.5),
-              disabledForegroundColor: Colors.black.withValues(alpha: 0.5),
+              disabledBackgroundColor: btnBg.withValues(alpha: 0.5),
+              disabledForegroundColor: btnFg.withValues(alpha: 0.5),
             ),
-            child: const Text(
+            child: Text(
               'Готово',
               style: TextStyle(
-                color: Colors.black,
+                color: btnFg,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -803,11 +853,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             });
           },
           style: ButtonStyle(
-            overlayColor: WidgetStateProperty.all<Color>(Colors.white30),
+            overlayColor: WidgetStateProperty.all<Color>(isDark ? Colors.white30 : Colors.black12),
           ),
-          child: const Text(
+          child: Text(
             'Назад',
-            style: TextStyle(color: Colors.white70, fontSize: 16),
+            style: TextStyle(color: secondaryTextColor, fontSize: 16),
           ),
         ),
       ],
