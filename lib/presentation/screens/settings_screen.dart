@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui';
 import 'package:flutter/foundation.dart';
 
 import 'package:flutter/material.dart';
@@ -628,141 +627,124 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final bg = Theme.of(context).scaffoldBackgroundColor;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: bg,
-      extendBodyBehindAppBar: true,
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            padding: EdgeInsets.fromLTRB(16, MediaQuery.paddingOf(context).top + 16 + 120 + 28, 16, 110),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (_selectedRole == 'student') ...[
-                  _sectionTitle('Учебная группа'),
-                  const SizedBox(height: 14),
-                  SettingsCard(
-                    title: 'Выберите свою специальность',
-                    subtitle: _selectedSpecialty?.name ?? 'Специальность не выбрана',
-                    icon: Icons.book_outlined,
-                    onTap: _showSpecialtySelector,
-                  ),
-                  const SizedBox(height: 14),
-                  SettingsCard(
-                    title: 'Выберите свою группу',
-                    subtitle: _selectedGroup?.code ?? 'Группа не выбрана',
-                    icon: Icons.school_outlined,
-                    onTap: _selectedSpecialty != null ? _showGroupSelector : null,
-                  ),
-                  const SizedBox(height: 14),
-                  SettingsCard(
-                    title: 'Сменить версию',
-                    subtitle: 'Изменить версию на преподавателя',
-                    icon: Icons.change_circle_outlined,
-                    onTap: _changeVersion,
-                  ),
-                ] else ...[
-                  _sectionTitle('Преподаватель'),
-                  const SizedBox(height: 14),
-                  SettingsCard(
-                    title: 'Выберите преподавателя',
-                    subtitle: _selectedTeacher?.teacherName ?? 'Преподаватель не выбран',
-                    icon: Icons.person_outline,
-                    onTap: _showTeacherSelector,
-                  ),
-                  const SizedBox(height: 14),
-                  SettingsCard(
-                    title: 'Сменить версию',
-                    subtitle: 'Изменить версию на студента',
-                    icon: Icons.change_circle_outlined,
-                    onTap: _changeVersion,
-                  ),
-                ],
-                const SizedBox(height: 28),
-                _sectionTitle('Расписание'),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: SafeArea(
+        bottom: false,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SettingsHeader(),
+              const SizedBox(height: 28),
+              if (_selectedRole == 'student') ...[
+                _sectionTitle('Учебная группа'),
                 const SizedBox(height: 14),
                 SettingsCard(
-                  title: _isRefreshing ? 'Обновление… ${_formatElapsed(_refreshElapsed)}' : 'Обновить расписание',
-                  subtitle: _getLastUpdateText(),
-                  icon: Icons.refresh,
-                  onTap: _refreshSchedule,
-                  isRefreshing: _isRefreshing,
+                  title: 'Выберите свою специальность',
+                  subtitle: _selectedSpecialty?.name ?? 'Специальность не выбрана',
+                  icon: Icons.book_outlined,
+                  onTap: _showSpecialtySelector,
                 ),
-                const SizedBox(height: 28),
-                _sectionTitle('Оформление'),
                 const SizedBox(height: 14),
                 SettingsCard(
-                  title: 'Тема оформления',
-                  subtitle: _themeLabel(_themeMode),
-                  icon: Icons.brightness_6_outlined,
-                  onTap: _showThemeSelector,
+                  title: 'Выберите свою группу',
+                  subtitle: _selectedGroup?.code ?? 'Группа не выбрана',
+                  icon: Icons.school_outlined,
+                  onTap: _selectedSpecialty != null ? _showGroupSelector : null,
                 ),
-                if (kDebugMode) ...[
-                  const SizedBox(height: 28),
-                  _sectionTitle('Уведомления (Тест)'),
-                  const SizedBox(height: 14),
-                  SettingsCard(
-                    title: 'Отправить локальное уведомление',
-                    subtitle: 'Проверка работы на самом устройстве',
-                    icon: Icons.notifications_active_outlined,
-                    onTap: _testLocalNotification,
-                  ),
-                  const SizedBox(height: 14),
-                  SettingsCard(
-                    title: 'Скопировать FCM Токен',
-                    subtitle: 'Для теста пушей через Firebase Console',
-                    icon: Icons.cloud_download_outlined,
-                    onTap: _copyFcmToken,
-                  ),
-                ],
-                const SizedBox(height: 28),
-                _sectionTitle('Обратная связь'),
                 const SizedBox(height: 14),
                 SettingsCard(
-                  title: 'Связаться с разработчиком',
-                  subtitle: 'Сообщить об ошибке или предложить улучшение',
-                  icon: Icons.chat_outlined,
-                  onTap: _openSupportLink,
+                  title: 'Сменить версию',
+                  subtitle: 'Изменить версию на преподавателя',
+                  icon: Icons.change_circle_outlined,
+                  onTap: _changeVersion,
                 ),
-                const SizedBox(height: 28),
-                _sectionTitle('Дополнительно'),
+              ] else ...[
+                _sectionTitle('Преподаватель'),
                 const SizedBox(height: 14),
-                GestureDetector(
-                  onTap: _showAboutDialog,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: cs.surface,
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: ListTile(
-                      leading: Icon(Icons.info_outline, color: cs.onSurface),
-                      title: Text('О приложении', style: TextStyle(color: cs.onSurface, fontWeight: FontWeight.w600)),
-                      trailing: Icon(Icons.arrow_forward_ios, size: 16, color: cs.onSurfaceVariant),
-                    ),
-                  ),
+                SettingsCard(
+                  title: 'Выберите преподавателя',
+                  subtitle: _selectedTeacher?.teacherName ?? 'Преподаватель не выбран',
+                  icon: Icons.person_outline,
+                  onTap: _showTeacherSelector,
+                ),
+                const SizedBox(height: 14),
+                SettingsCard(
+                  title: 'Сменить версию',
+                  subtitle: 'Изменить версию на студента',
+                  icon: Icons.change_circle_outlined,
+                  onTap: _changeVersion,
                 ),
               ],
-            ),
-          ),
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: ClipRect(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+              const SizedBox(height: 28),
+              _sectionTitle('Расписание'),
+              const SizedBox(height: 14),
+              SettingsCard(
+                title: _isRefreshing ? 'Обновление… ${_formatElapsed(_refreshElapsed)}' : 'Обновить расписание',
+                subtitle: _getLastUpdateText(),
+                icon: Icons.refresh,
+                onTap: _refreshSchedule,
+                isRefreshing: _isRefreshing,
+              ),
+              const SizedBox(height: 28),
+              _sectionTitle('Оформление'),
+              const SizedBox(height: 14),
+              SettingsCard(
+                title: 'Тема оформления',
+                subtitle: _themeLabel(_themeMode),
+                icon: Icons.brightness_6_outlined,
+                onTap: _showThemeSelector,
+              ),
+              if (kDebugMode) ...[
+                const SizedBox(height: 28),
+                _sectionTitle('Уведомления (Тест)'),
+                const SizedBox(height: 14),
+                SettingsCard(
+                  title: 'Отправить локальное уведомление',
+                  subtitle: 'Проверка работы на самом устройстве',
+                  icon: Icons.notifications_active_outlined,
+                  onTap: _testLocalNotification,
+                ),
+                const SizedBox(height: 14),
+                SettingsCard(
+                  title: 'Скопировать FCM Токен',
+                  subtitle: 'Для теста пушей через Firebase Console',
+                  icon: Icons.cloud_download_outlined,
+                  onTap: _copyFcmToken,
+                ),
+              ],
+              const SizedBox(height: 28),
+              _sectionTitle('Обратная связь'),
+              const SizedBox(height: 14),
+              SettingsCard(
+                title: 'Связаться с разработчиком',
+                subtitle: 'Сообщить об ошибке или предложить улучшение',
+                icon: Icons.chat_outlined,
+                onTap: _openSupportLink,
+              ),
+              const SizedBox(height: 28),
+              _sectionTitle('Дополнительно'),
+              const SizedBox(height: 14),
+              GestureDetector(
+                onTap: _showAboutDialog,
                 child: Container(
-                  color: bg.withValues(alpha: isDark ? 0.3 : 0.4),
-                  padding: EdgeInsets.only(top: MediaQuery.paddingOf(context).top + 16, bottom: 16, left: 16, right: 16),
-                  child: const SettingsHeader(),
+                  decoration: BoxDecoration(
+                    color: cs.surface,
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: ListTile(
+                    leading: Icon(Icons.info_outline, color: cs.onSurface),
+                    title: Text('О приложении', style: TextStyle(color: cs.onSurface, fontWeight: FontWeight.w600)),
+                    trailing: Icon(Icons.arrow_forward_ios, size: 16, color: cs.onSurfaceVariant),
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

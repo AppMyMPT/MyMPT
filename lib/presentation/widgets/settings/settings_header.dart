@@ -11,13 +11,14 @@ class SettingsHeader extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     final gradientColors = isDark
-        ? [const Color(0xFF333333).withValues(alpha: 0.6), const Color(0xFF111111).withValues(alpha: 0.6)]
-        : [Colors.white.withValues(alpha: 0.5), const Color(0xFFF5F5F5).withValues(alpha: 0.5)];
+        ? const [Color(0xFF333333), Color(0xFF111111)]
+        : const [Color(0xFFFFFFFF), Color(0xFFF5F5F5)];
 
     final titleColor = isDark ? Colors.white : cs.onSurface;
     final subtitleColor = isDark ? Colors.white70 : cs.onSurfaceVariant;
 
     return Container(
+      margin: const EdgeInsets.fromLTRB(0, 0, 0, 0),
       padding: const EdgeInsets.fromLTRB(24, 30, 24, 26),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(32),
