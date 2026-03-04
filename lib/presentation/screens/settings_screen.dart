@@ -95,6 +95,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       HapticFeedback.lightImpact();
     }
   }
+  
+  Future<void> _triggerSuccessHaptic() async {
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+      await HapticFeedback.lightImpact();
+      await Future.delayed(const Duration(milliseconds: 150));
+      await HapticFeedback.lightImpact();
+    }
+  }
 
   Future<void> _onScheduleDataUpdated() async {
     try {
@@ -381,6 +389,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       if (mounted) {
         if (ok) {
+          _triggerSuccessHaptic();
           showSuccessNotification(context, 'Расписание обновлено', 'Данные успешно загружены', Icons.check_circle_outline);
         } else {
           showInfoNotification(context, 'Нет интернета', 'Показано последнее сохранённое расписание', Icons.wifi_off);
@@ -423,6 +432,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _repository.dataUpdatedNotifier.value = !_repository.dataUpdatedNotifier.value;
 
       if (mounted) {
+        _triggerSuccessHaptic();
         showSuccessNotification(context, 'Версия изменена', fromToChange, Icons.check_circle_outline);
       }
     } catch (e) {
@@ -552,6 +562,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
         if (mounted) {
           if (ok) {
+            _triggerSuccessHaptic();
             showSuccessNotification(context, 'Группа выбрана', 'Выбрана группа ${group.code}. Расписание обновлено.', Icons.check_circle_outline);
           } else {
             showInfoNotification(context, 'Группа выбрана', 'Выбрана группа ${group.code}. Показано сохранённое расписание (офлайн).', Icons.wifi_off);
@@ -579,6 +590,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
         if (mounted) {
           if (ok) {
+            _triggerSuccessHaptic();
             showSuccessNotification(context, 'Преподаватель выбран', '${teacher.teacherName} • Расписание обновлено', Icons.check_circle_outline);
           } else {
             showInfoNotification(context, 'Преподаватель выбран', 'Показано сохранённое расписание (офлайн).', Icons.wifi_off);
