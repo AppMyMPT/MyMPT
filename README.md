@@ -58,9 +58,9 @@ APK-релизы можно скачать с GitHub -[<img align="center" heigh
 
 ## Разработчики
 
-- [Себежко Александр Андреевич](https://github.com/merrcurys)
-- [Симернин Матвей Александрович](https://github.com/E-eclipse)
-- [Посёлов Иван Павлович](https://github.com/Ivan3310)
+- [Себежко Александр Андреевич](https://github.com/merrcurys) из группы П50-1-22
+- [Симернин Матвей Александрович](https://github.com/E-eclipse) из группы П50-1-22
+- [Посёлов Иван Павлович](https://github.com/Ivan3310) из группы СА-2-24
 
 ## Лицензия
 
