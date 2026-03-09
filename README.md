@@ -30,7 +30,7 @@
 
 ## Документация
 
-Документация проекта находится в файле [DOCUMENTATION.md](https://github.com/Merrcurys/MyMPT/blob/main/docs/DOCUMENTATION.md). Она включает в себя:
+Документация проекта находится в файле [DOCUMENTATION.md](https://github.com/AppMyMPT/MyMPT/blob/main/docs/DOCUMENTATION.md). Она включает в себя:
 
 - Архитектуру проекта
 - Описание слоев данных, домена и представления
@@ -41,9 +41,9 @@
 
 Приложение доступно в RuStore	- [<img align="center" height="45" alt="logo-color-dark" src="https://github.com/user-attachments/assets/bd6014bd-a5c7-4130-bd31-80c8b57e13a2" />](https://www.rustore.ru/catalog/app/ru.merrcurys.my_mpt)
 
-Приложение доступно в AppStore - [<img align="center" height="55" alt="logo-color-dark" src="https://github.com/user-attachments/assets/586a418c-696b-4e6c-a6f5-e97ef95c76dc" />](https://apps.apple.com/us/app/%D0%BC%D0%BE%D0%B9-%D0%BC%D0%BF%D1%82/id6759071381)
+Приложение доступно в AppStore - [<img align="center" height="55" alt="logo-color-dark" src="https://github.com/user-attachments/assets/586a418c-696b-4e6c-a6f5-e97ef95c76dc" />](https://apps.apple.com/us/app/мой-мпт/id6759071381)
 
-APK-релизы можно скачать с GitHub -[<img align="center" height="60" alt="logo-color-dark" src="https://github.com/user-attachments/assets/1a481370-4323-40e8-94b8-0106b9fc5363" />](https://github.com/Merrcurys/MyMPT/releases)
+APK-релизы можно скачать с GitHub -[<img align="center" height="60" alt="logo-color-dark" src="https://github.com/user-attachments/assets/1a481370-4323-40e8-94b8-0106b9fc5363" />](https://github.com/AppMyMPT/MyMPT/releases)
 
 ## Поддержка и обсуждение
 
