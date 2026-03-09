@@ -62,6 +62,10 @@ APK-релизы можно скачать с GitHub -[<img align="center" heigh
 - [Симернин Матвей Александрович](https://github.com/E-eclipse) из группы П50-1-22
 - [Посёлов Иван Павлович](https://github.com/Ivan3310) из группы СА-2-24
 
+## Архивный репозиторий
+
+Старый репозиторий проекта находится здесь - [Merrcurys/MyMPT ](https://github.com/Merrcurys/MyMPT)
+
 ## Лицензия
 
 «Мой МПТ» распространяется под лицензией GNU GPL-3.0.
