@@ -1,7 +1,7 @@
 name: my_mpt
 description: "An application for MPT students that allows you to view the class schedule."
 publish_to: 'none'
-version: 2.0.0+9
+version: 2.1.0+10
 
 environment:
   sdk: ^3.9.2
