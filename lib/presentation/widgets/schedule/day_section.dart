@@ -239,7 +239,7 @@ class DaySection extends StatelessWidget {
           const SizedBox(height: 20),
           Column(children: _buildLessonWidgets(lessons, callsData, onLessonTap: onLessonTap)),
           const SizedBox(height: 12),
-          Divider(color: cs.outlineVariant.withValues(alpha: 0.5), height: 32),
+          Divider(color: cs.outlineVariant.withValues(alpha: 0.18), height: 32),
         ],
       ),
     );

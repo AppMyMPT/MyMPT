@@ -550,34 +550,29 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     ),
                   ),
                 )
-              : DropdownButtonHideUnderline(
-                  child: DropdownButton<data_model.Specialty>(
-                    value: _selectedSpecialty,
-                    hint: Text(
-                      'Выберите специальность',
-                      style: TextStyle(color: secondaryTextColor),
-                    ),
-                    items: _specialties.map((data_model.Specialty specialty) {
-                      return DropdownMenuItem<data_model.Specialty>(
-                        value: specialty,
+              : InkWell(
+                  onTap: _specialties.isEmpty ? null : _showSpecialtySelectorBottomSheet,
+                  borderRadius: BorderRadius.circular(16),
+                  child: Row(
+                    children: [
+                      Expanded(
                         child: Text(
-                          specialty.name,
-                          style: TextStyle(color: primaryTextColor),
+                          _selectedSpecialty?.name ?? 'Выберите специальность',
+                          style: TextStyle(
+                            color: _selectedSpecialty == null
+                                ? secondaryTextColor
+                                : primaryTextColor,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      );
-                    }).toList(),
-                    onChanged: (data_model.Specialty? newValue) {
-                      _triggerHaptic();
-                      setState(() {
-                        _selectedSpecialty = newValue;
-                      });
-                    },
-                    isExpanded: true,
-                    dropdownColor: dropdownBg,
-                    icon: Icon(
-                      Icons.arrow_drop_down,
-                      color: primaryTextColor,
-                    ),
+                      ),
+                      Icon(
+                        Icons.arrow_drop_down,
+                        color: primaryTextColor,
+                      ),
+                    ],
                   ),
                 ),
         ),
@@ -676,34 +671,29 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     ),
                   ),
                 )
-              : DropdownButtonHideUnderline(
-                  child: DropdownButton<Group>(
-                    value: _selectedGroup,
-                    hint: Text(
-                      'Выберите группу',
-                      style: TextStyle(color: secondaryTextColor),
-                    ),
-                    items: _groups.map((Group group) {
-                      return DropdownMenuItem<Group>(
-                        value: group,
+              : InkWell(
+                  onTap: _groups.isEmpty ? null : _showGroupSelectorBottomSheet,
+                  borderRadius: BorderRadius.circular(16),
+                  child: Row(
+                    children: [
+                      Expanded(
                         child: Text(
-                          group.code,
-                          style: TextStyle(color: primaryTextColor),
+                          _selectedGroup?.code ?? 'Выберите группу',
+                          style: TextStyle(
+                            color: _selectedGroup == null
+                                ? secondaryTextColor
+                                : primaryTextColor,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      );
-                    }).toList(),
-                    onChanged: (Group? newValue) {
-                      _triggerHaptic();
-                      setState(() {
-                        _selectedGroup = newValue;
-                      });
-                    },
-                    isExpanded: true,
-                    dropdownColor: dropdownBg,
-                    icon: Icon(
-                      Icons.arrow_drop_down,
-                      color: primaryTextColor,
-                    ),
+                      ),
+                      Icon(
+                        Icons.arrow_drop_down,
+                        color: primaryTextColor,
+                      ),
+                    ],
                   ),
                 ),
         ),
@@ -803,34 +793,27 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     ),
                   ),
                 )
-              : DropdownButtonHideUnderline(
-                  child: DropdownButton<Teacher>(
-                    value: _selectedTeacher,
-                    hint: Text(
-                      'Выберите преподавателя',
-                      style: TextStyle(color: secondaryTextColor),
-                    ),
-                    items: _teachers.map((Teacher teacher) {
-                      return DropdownMenuItem<Teacher>(
-                        value: teacher,
+              : InkWell(
+                  onTap: _teachers.isEmpty ? null : _showTeacherSelectorBottomSheet,
+                  borderRadius: BorderRadius.circular(16),
+                  child: Row(
+                    children: [
+                      Expanded(
                         child: Text(
-                          teacher.teacherName,
-                          style: TextStyle(color: primaryTextColor),
+                          _selectedTeacher?.teacherName ?? 'Выберите преподавателя',
+                          style: TextStyle(
+                            color: _selectedTeacher == null ? secondaryTextColor : primaryTextColor,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      );
-                    }).toList(),
-                    onChanged: (Teacher? newValue) {
-                      _triggerHaptic();
-                      setState(() {
-                        _selectedTeacher = newValue;
-                      });
-                    },
-                    isExpanded: true,
-                    dropdownColor: dropdownBg,
-                    icon: Icon(
-                      Icons.arrow_drop_down,
-                      color: primaryTextColor,
-                    ),
+                      ),
+                      Icon(
+                        Icons.arrow_drop_down,
+                        color: primaryTextColor,
+                      ),
+                    ],
                   ),
                 ),
         ),
@@ -886,6 +869,273 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  void _showTeacherSelectorBottomSheet() {
+    final cs = Theme.of(context).colorScheme;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        String searchQuery = '';
+
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.6,
+          decoration: BoxDecoration(
+            color: cs.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: StatefulBuilder(
+            builder: (context, setModalState) {
+              final q = searchQuery.trim().toLowerCase();
+              final filteredTeachers = q.isEmpty
+                  ? _teachers
+                  : _teachers
+                      .where((t) => t.teacherName.toLowerCase().contains(q))
+                      .toList();
+
+              return Column(
+                children: [
+                  Container(
+                    margin: const EdgeInsets.all(16),
+                    height: 4,
+                    width: 40,
+                    decoration: BoxDecoration(
+                      color: cs.onSurface.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                    child: Text(
+                      'Выберите преподавателя',
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleLarge
+                          ?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 340),
+                        child: SizedBox(
+                          height: 44,
+                          child: TextField(
+                            onChanged: (value) {
+                              setModalState(() => searchQuery = value);
+                            },
+                            textInputAction: TextInputAction.search,
+                            style: TextStyle(color: cs.onSurface),
+                            cursorColor: cs.onSurface,
+                            decoration: InputDecoration(
+                              hintText: 'Поиск',
+                              hintStyle: TextStyle(color: cs.onSurfaceVariant),
+                              prefixIcon: Icon(
+                                Icons.search,
+                                size: 20,
+                                color: cs.onSurfaceVariant,
+                              ),
+                              filled: true,
+                              fillColor: cs.onSurface.withValues(alpha: 0.04),
+                              isDense: true,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(18),
+                                borderSide: BorderSide(
+                                  color: cs.onSurface.withValues(alpha: 0.08),
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(18),
+                                borderSide: BorderSide(
+                                  color: cs.onSurface.withValues(alpha: 0.16),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: _isTeachersLoading
+                        ? Center(
+                            child: CircularProgressIndicator(
+                              color: cs.onSurface,
+                            ),
+                          )
+                        : filteredTeachers.isEmpty
+                            ? Center(
+                                child: Text(
+                                  q.isEmpty
+                                      ? 'Преподаватели не найдены'
+                                      : 'Ничего не найдено',
+                                  style: TextStyle(color: cs.onSurfaceVariant),
+                                ),
+                              )
+                            : ListView.builder(
+                                itemCount: filteredTeachers.length,
+                                itemBuilder: (context, index) {
+                                  final teacher = filteredTeachers[index];
+                                  return ListTile(
+                                    title: Text(teacher.teacherName),
+                                    onTap: () {
+                                      _triggerHaptic();
+                                      setState(() {
+                                        _selectedTeacher = teacher;
+                                      });
+                                      Navigator.pop(context);
+                                    },
+                                  );
+                                },
+                              ),
+                  ),
+                ],
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  void _showSpecialtySelectorBottomSheet() {
+    final cs = Theme.of(context).colorScheme;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.6,
+          decoration: BoxDecoration(
+            color: cs.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            children: [
+              Container(
+                margin: const EdgeInsets.all(16),
+                height: 4,
+                width: 40,
+                decoration: BoxDecoration(
+                  color: cs.onSurface.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  'Выберите специальность',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleLarge
+                      ?.copyWith(fontWeight: FontWeight.bold),
+                ),
+              ),
+              Expanded(
+                child: _isLoading
+                    ? Center(
+                        child: CircularProgressIndicator(color: cs.onSurface),
+                      )
+                    : ListView.builder(
+                        itemCount: _specialties.length,
+                        itemBuilder: (context, index) {
+                          final specialty = _specialties[index];
+                          return ListTile(
+                            title: Text(specialty.name),
+                            onTap: () {
+                              _triggerHaptic();
+                              setState(() {
+                                _selectedSpecialty = specialty;
+                              });
+                              Navigator.pop(context);
+                            },
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showGroupSelectorBottomSheet() {
+    final cs = Theme.of(context).colorScheme;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.6,
+          decoration: BoxDecoration(
+            color: cs.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            children: [
+              Container(
+                margin: const EdgeInsets.all(16),
+                height: 4,
+                width: 40,
+                decoration: BoxDecoration(
+                  color: cs.onSurface.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  'Выберите группу',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleLarge
+                      ?.copyWith(fontWeight: FontWeight.bold),
+                ),
+              ),
+              Expanded(
+                child: _isGroupsLoading
+                    ? Center(
+                        child: CircularProgressIndicator(color: cs.onSurface),
+                      )
+                    : _groups.isEmpty
+                        ? Center(
+                            child: Text(
+                              'Группы не найдены',
+                              style: TextStyle(color: cs.onSurfaceVariant),
+                            ),
+                          )
+                        : ListView.builder(
+                            itemCount: _groups.length,
+                            itemBuilder: (context, index) {
+                              final group = _groups[index];
+                              return ListTile(
+                                title: Text(group.code),
+                                onTap: () {
+                                  _triggerHaptic();
+                                  setState(() {
+                                    _selectedGroup = group;
+                                  });
+                                  Navigator.pop(context);
+                                },
+                              );
+                            },
+                          ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

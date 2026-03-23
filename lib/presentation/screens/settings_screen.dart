@@ -300,7 +300,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         await AppThemeService.setThemeMode(v);
                         if (context.mounted) Navigator.pop(context);
                       },
-                      title: const Text('Системная (как на устройстве)'),
+                      title: const Text('Системная'),
                     ),
                     RadioListTile<ThemeMode>(
                       value: ThemeMode.light,
@@ -862,7 +862,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               Expanded(
                 child: _isLoading
-                    ? const Center(child: CircularProgressIndicator())
+                    ? Center(
+                        child: CircularProgressIndicator(
+                          color: cs.onSurface,
+                        ),
+                      )
                     : ListView.builder(
                         itemCount: _specialties.length,
                         itemBuilder: (context, index) {
@@ -918,7 +922,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               Expanded(
                 child: _isLoading
-                    ? const Center(child: CircularProgressIndicator())
+                    ? Center(
+                        child: CircularProgressIndicator(
+                          color: cs.onSurface,
+                        ),
+                      )
                     : _groups.isEmpty
                         ? Center(child: Text('Группы не найдены', style: TextStyle(color: cs.onSurfaceVariant)))
                         : ListView.builder(
@@ -950,51 +958,119 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (BuildContext context) {
+        String searchQuery = '';
         return Container(
           height: MediaQuery.of(context).size.height * 0.6,
           decoration: BoxDecoration(
             color: cs.surface,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
-          child: Column(
-            children: [
-              Container(
-                margin: const EdgeInsets.all(16),
-                height: 4,
-                width: 40,
-                decoration: BoxDecoration(
-                  color: cs.onSurface.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(
-                  'Выберите преподавателя',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                ),
-              ),
-              Expanded(
-                child: _isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : _teachers.isEmpty
-                        ? Center(child: Text('Преподаватели не найдены', style: TextStyle(color: cs.onSurfaceVariant)))
-                        : ListView.builder(
-                            itemCount: _teachers.length,
-                            itemBuilder: (context, index) {
-                              final teacher = _teachers[index];
-                              return ListTile(
-                                title: Text(teacher.teacherName),
-                                onTap: () {
-                                  _triggerHaptic();
-                                  Navigator.pop(context);
-                                  _onTeacherSelected(teacher);
-                                },
-                              );
+          child: StatefulBuilder(
+            builder: (context, setModalState) {
+              final q = searchQuery.trim().toLowerCase();
+              final filteredTeachers = q.isEmpty
+                  ? _teachers
+                  : _teachers.where((t) => t.teacherName.toLowerCase().contains(q)).toList();
+
+              return Column(
+                children: [
+                  Container(
+                    margin: const EdgeInsets.all(16),
+                    height: 4,
+                    width: 40,
+                    decoration: BoxDecoration(
+                      color: cs.onSurface.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                    child: Text(
+                      'Выберите преподавателя',
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleLarge
+                          ?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 340),
+                        child: SizedBox(
+                          height: 44,
+                          child: TextField(
+                            onChanged: (value) {
+                              setModalState(() => searchQuery = value);
                             },
+                            textInputAction: TextInputAction.search,
+                            style: TextStyle(color: cs.onSurface),
+                            cursorColor: cs.onSurface,
+                            decoration: InputDecoration(
+                              hintText: 'Поиск',
+                              hintStyle: TextStyle(color: cs.onSurfaceVariant),
+                              prefixIcon: Icon(
+                                Icons.search,
+                                size: 20,
+                                color: cs.onSurfaceVariant,
+                              ),
+                              filled: true,
+                              fillColor: cs.onSurface.withValues(alpha: 0.04),
+                              isDense: true,
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(18),
+                                borderSide: BorderSide(
+                                  color: cs.onSurface.withValues(alpha: 0.08),
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(18),
+                                borderSide: BorderSide(
+                                  color: cs.onSurface.withValues(alpha: 0.16),
+                                ),
+                              ),
+                            ),
                           ),
-              ),
-            ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: _isLoading
+                        ? Center(
+                            child: CircularProgressIndicator(
+                              color: cs.onSurface,
+                            ),
+                          )
+                        : filteredTeachers.isEmpty
+                            ? Center(
+                                child: Text(
+                                  q.isEmpty
+                                      ? 'Преподаватели не найдены'
+                                      : 'Ничего не найдено',
+                                  style: TextStyle(color: cs.onSurfaceVariant),
+                                ),
+                              )
+                            : ListView.builder(
+                                itemCount: filteredTeachers.length,
+                                itemBuilder: (context, index) {
+                                  final teacher = filteredTeachers[index];
+                                  return ListTile(
+                                    title: Text(teacher.teacherName),
+                                    onTap: () {
+                                      _triggerHaptic();
+                                      Navigator.pop(context);
+                                      _onTeacherSelected(teacher);
+                                    },
+                                  );
+                                },
+                              ),
+                  ),
+                ],
+              );
+            },
           ),
         );
       },
