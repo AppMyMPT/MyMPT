@@ -168,12 +168,59 @@ class _OverviewScreenState extends State<OverviewScreen> {
     if (!userInitiated && _autoOfflineNotified) return;
     _autoOfflineNotified = true;
 
+    final reason = repository.lastFailureReason;
+    if (reason == ScheduleRefreshFailureReason.selectionNotChosen) {
+      showInfoNotification(
+        context,
+        _isStudent ? 'Выберите группу' : 'Выберите преподавателя',
+        _isStudent
+            ? 'Сначала выберите специальность и группу в настройках'
+            : 'Сначала выберите преподавателя в настройках',
+        Icons.info_outline,
+      );
+      return;
+    }
+    if (reason == ScheduleRefreshFailureReason.sourceUnavailable) {
+      showInfoNotification(
+        context,
+        'Сайт расписания недоступен',
+        'Показано последнее сохранённое расписание',
+        Icons.cloud_off,
+      );
+      return;
+    }
+    if (reason == ScheduleRefreshFailureReason.noInternet) {
+      showInfoNotification(
+        context,
+        'Нет интернета',
+        'Показано последнее сохранённое расписание',
+        Icons.wifi_off,
+      );
+      return;
+    }
+
     showInfoNotification(
       context,
-      'Нет интернета',
+      'Не удалось обновить расписание',
       'Показано последнее сохранённое расписание',
-      Icons.info_outline,
+      Icons.error_outline,
     );
+  }
+
+  IconData _offlineStatusIcon() {
+    final reason = repository.lastFailureReason;
+    switch (reason) {
+      case ScheduleRefreshFailureReason.selectionNotChosen:
+        return _isStudent ? Icons.school_outlined : Icons.person_outline;
+      case ScheduleRefreshFailureReason.sourceUnavailable:
+        return Icons.cloud_off;
+      case ScheduleRefreshFailureReason.noInternet:
+        return Icons.wifi_off;
+      case ScheduleRefreshFailureReason.unknown:
+        return Icons.error_outline;
+      case ScheduleRefreshFailureReason.none:
+        return Icons.info_outline;
+    }
   }
 
   Future<void> fetchScheduleData({
@@ -364,6 +411,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
             weekType: weekType ?? '',
             gradient: getHeaderGradient(weekType ?? '', isDark: isDark),
             isOffline: isOffline,
+            statusIcon: _offlineStatusIcon(),
           ),
         ),
         SliverPadding(
@@ -760,6 +808,7 @@ class _StaticOverviewHeader extends StatelessWidget {
     required this.weekType,
     required this.gradient,
     required this.isOffline,
+    required this.statusIcon,
   });
 
   final String title;
@@ -767,6 +816,7 @@ class _StaticOverviewHeader extends StatelessWidget {
   final String weekType;
   final List<Color> gradient;
   final bool isOffline;
+  final IconData statusIcon;
 
   @override
   Widget build(BuildContext context) {
@@ -864,7 +914,7 @@ class _StaticOverviewHeader extends StatelessWidget {
                   child: Opacity(
                     opacity: isOffline ? 1.0 : 0.0,
                     child: Icon(
-                      Icons.wifi_off,
+                      statusIcon,
                       size: iconSize,
                       color: titleColor.withOpacity(0.85),
                     ),

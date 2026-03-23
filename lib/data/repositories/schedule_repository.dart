@@ -7,6 +7,14 @@ import 'package:my_mpt/domain/entities/schedule.dart';
 import 'package:my_mpt/domain/repositories/schedule_repository_interface.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+enum ScheduleRefreshFailureReason {
+  none,
+  selectionNotChosen,
+  noInternet,
+  sourceUnavailable,
+  unknown,
+}
+
 class ScheduleRepository implements ScheduleRepositoryInterface {
   final ScheduleRemoteDatasource _remoteDatasource = ScheduleRemoteDatasource();
   final ScheduleCacheDataSource _cacheDataSource = ScheduleCacheDataSource();
@@ -23,6 +31,7 @@ class ScheduleRepository implements ScheduleRepositoryInterface {
   DateTime? _lastFailedRefreshAttempt;
   bool _cacheInitialized = false;
   bool _lastRefreshSucceeded = true;
+  ScheduleRefreshFailureReason _lastFailureReason = ScheduleRefreshFailureReason.none;
 
   static const Duration _failedRefreshCooldown = Duration(minutes: 10);
 
@@ -40,6 +49,7 @@ class ScheduleRepository implements ScheduleRepositoryInterface {
   bool get isOfflineBadgeVisible => !_lastRefreshSucceeded && _lastUpdate != null;
 
   DateTime? get lastFailedRefreshAttempt => _lastFailedRefreshAttempt;
+  ScheduleRefreshFailureReason get lastFailureReason => _lastFailureReason;
 
   @override
   Future<Map<String, List<Schedule>>> getWeeklySchedule() async {
@@ -190,6 +200,7 @@ class ScheduleRepository implements ScheduleRepositoryInterface {
       if (targetName.isEmpty) {
         await _clearCache(); // тут реально нечего показывать
         _lastRefreshSucceeded = false;
+        _lastFailureReason = ScheduleRefreshFailureReason.selectionNotChosen;
         return false;
       }
 
@@ -222,6 +233,7 @@ class ScheduleRepository implements ScheduleRepositoryInterface {
       _lastUpdate = DateTime.now();
       _lastFailedRefreshAttempt = null;
       _lastRefreshSucceeded = true;
+      _lastFailureReason = ScheduleRefreshFailureReason.none;
 
       await _cacheDataSource.save(
         ScheduleCache(
@@ -237,6 +249,7 @@ class ScheduleRepository implements ScheduleRepositoryInterface {
       debugPrint('Ошибка при обновлении данных расписания: $e');
       _lastFailedRefreshAttempt = DateTime.now();
       _lastRefreshSucceeded = false;
+      _lastFailureReason = _classifyRefreshError(e);
 
       // Ключевой момент: кэш НЕ очищаем — офлайн-просмотр сохраняется.
       return false;
@@ -250,6 +263,7 @@ class ScheduleRepository implements ScheduleRepositoryInterface {
     _lastUpdate = null;
     _lastFailedRefreshAttempt = null;
     _lastRefreshSucceeded = false;
+    _lastFailureReason = ScheduleRefreshFailureReason.none;
 
     _remoteDatasource.clearCache();
     _cacheInitialized = false;
@@ -272,13 +286,39 @@ class ScheduleRepository implements ScheduleRepositoryInterface {
 
       // Если у нас есть кэш — считаем, что "данные есть", даже если сеть потом пропадёт.
       _lastRefreshSucceeded = true;
+      _lastFailureReason = ScheduleRefreshFailureReason.none;
     } catch (_) {
       _cachedWeeklySchedule = null;
       _cachedTodaySchedule = null;
       _cachedTomorrowSchedule = null;
       _lastUpdate = null;
       _lastRefreshSucceeded = false;
+      _lastFailureReason = ScheduleRefreshFailureReason.unknown;
     }
+  }
+
+  ScheduleRefreshFailureReason _classifyRefreshError(Object error) {
+    final text = error.toString().toLowerCase();
+
+    if (text.contains('socketexception') ||
+        text.contains('failed host lookup') ||
+        text.contains('network is unreachable') ||
+        text.contains('connection refused') ||
+        text.contains('connection reset')) {
+      return ScheduleRefreshFailureReason.noInternet;
+    }
+
+    if (text.contains('httpexception') ||
+        text.contains('statuscode') ||
+        text.contains('status code') ||
+        text.contains('не удалось загрузить страницу') ||
+        text.contains('превышено время ожидания ответа от сервера') ||
+        text.contains('технические работы') ||
+        text.contains('защита от ботов')) {
+      return ScheduleRefreshFailureReason.sourceUnavailable;
+    }
+
+    return ScheduleRefreshFailureReason.unknown;
   }
 
   Future<String> _getSelectedGroupCode() async {

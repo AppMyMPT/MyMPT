@@ -395,7 +395,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _triggerSuccessHaptic();
           showSuccessNotification(context, 'Расписание обновлено', 'Данные успешно загружены', Icons.check_circle_outline);
         } else {
-          showInfoNotification(context, 'Нет интернета', 'Показано последнее сохранённое расписание', Icons.wifi_off);
+          final reason = _repository.lastFailureReason;
+          if (reason == ScheduleRefreshFailureReason.selectionNotChosen) {
+            if (_selectedRole == 'student') {
+              showInfoNotification(
+                context,
+                'Выберите группу',
+                'Сначала выберите специальность и группу',
+                Icons.school_outlined,
+              );
+            } else {
+              showInfoNotification(
+                context,
+                'Выберите преподавателя',
+                'Сначала выберите преподавателя',
+                Icons.person_outline,
+              );
+            }
+          } else if (reason == ScheduleRefreshFailureReason.sourceUnavailable) {
+            showInfoNotification(
+              context,
+              'Сайт расписания недоступен',
+              'Показано последнее сохранённое расписание',
+              Icons.cloud_off,
+            );
+          } else if (reason == ScheduleRefreshFailureReason.noInternet) {
+            showInfoNotification(
+              context,
+              'Нет интернета',
+              'Показано последнее сохранённое расписание',
+              Icons.wifi_off,
+            );
+          } else {
+            showInfoNotification(
+              context,
+              'Не удалось обновить расписание',
+              'Показано последнее сохранённое расписание',
+              Icons.error_outline,
+            );
+          }
         }
       }
     } catch (_) {
@@ -568,7 +606,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _triggerSuccessHaptic();
             showSuccessNotification(context, 'Группа выбрана', 'Выбрана группа ${group.code}. Расписание обновлено.', Icons.check_circle_outline);
           } else {
-            showInfoNotification(context, 'Группа выбрана', 'Выбрана группа ${group.code}. Показано сохранённое расписание (офлайн).', Icons.wifi_off);
+            final reason = _repository.lastFailureReason;
+            if (reason == ScheduleRefreshFailureReason.sourceUnavailable) {
+              showInfoNotification(
+                context,
+                'Группа выбрана',
+                'Выбрана группа ${group.code}. Сайт расписания временно недоступен, показаны сохранённые данные.',
+                Icons.cloud_off,
+              );
+            } else if (reason == ScheduleRefreshFailureReason.noInternet) {
+              showInfoNotification(
+                context,
+                'Группа выбрана',
+                'Выбрана группа ${group.code}. Показано сохранённое расписание (офлайн).',
+                Icons.wifi_off,
+              );
+            } else {
+              showInfoNotification(
+                context,
+                'Группа выбрана',
+                'Выбрана группа ${group.code}. Не удалось обновить расписание, показаны сохранённые данные.',
+                Icons.error_outline,
+              );
+            }
           }
         }
       } catch (_) {
@@ -596,7 +656,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _triggerSuccessHaptic();
             showSuccessNotification(context, 'Преподаватель выбран', '${teacher.teacherName} • Расписание обновлено', Icons.check_circle_outline);
           } else {
-            showInfoNotification(context, 'Преподаватель выбран', 'Показано сохранённое расписание (офлайн).', Icons.wifi_off);
+            final reason = _repository.lastFailureReason;
+            if (reason == ScheduleRefreshFailureReason.sourceUnavailable) {
+              showInfoNotification(
+                context,
+                'Преподаватель выбран',
+                'Сайт расписания временно недоступен, показаны сохранённые данные.',
+                Icons.cloud_off,
+              );
+            } else if (reason == ScheduleRefreshFailureReason.noInternet) {
+              showInfoNotification(
+                context,
+                'Преподаватель выбран',
+                'Показано сохранённое расписание (офлайн).',
+                Icons.wifi_off,
+              );
+            } else {
+              showInfoNotification(
+                context,
+                'Преподаватель выбран',
+                'Не удалось обновить расписание, показаны сохранённые данные.',
+                Icons.error_outline,
+              );
+            }
           }
         }
       } catch (_) {
