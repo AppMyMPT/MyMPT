@@ -313,6 +313,11 @@ class ScheduleRepository implements ScheduleRepositoryInterface {
         text.contains('status code') ||
         text.contains('не удалось загрузить страницу') ||
         text.contains('превышено время ожидания ответа от сервера') ||
+        text.contains('handshakeexception') ||
+        text.contains('cert_has_expired') ||
+        text.contains('certificate has expired') ||
+        text.contains('certificate_verify_failed') ||
+        text.contains('x509') ||
         text.contains('технические работы') ||
         text.contains('защита от ботов')) {
       return ScheduleRefreshFailureReason.sourceUnavailable;
