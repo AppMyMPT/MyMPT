@@ -1,7 +1,5 @@
-import '../entities/specialty.dart';
+﻿import '../entities/specialty.dart';
 
-/// Интерфейс репозитория для работы со специальностями
 abstract class SpecialtyRepositoryInterface {
-  /// Получить все специальности
-  Future<List<Specialty>> getSpecialties();
+  Future<List<Specialty>> getSpecialties({bool forceRefresh = false});
 }

@@ -732,7 +732,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final contentTopPadding = 16.0 + (MediaQuery.of(context).padding.top * 0.35);
+    final contentTopPadding = 16.0 + MediaQuery.of(context).padding.top;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io' show Platform;
-import 'dart:ui' show ImageFilter;
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/cupertino.dart';
@@ -391,13 +390,6 @@ class _MainScreenState extends State<MainScreen> {
               },
               children: _screens,
             ),
-            if (isIOS)
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: _StatusBarBlurOverlay(isDark: isDark),
-              ),
             if (_currentIndex == 0 || _currentIndex == 1)
               Positioned(
                 left: 0,
@@ -415,43 +407,3 @@ class _MainScreenState extends State<MainScreen> {
   }
 }
 
-class _StatusBarBlurOverlay extends StatelessWidget {
-  const _StatusBarBlurOverlay({required this.isDark});
-
-  final bool isDark;
-
-  @override
-  Widget build(BuildContext context) {
-    final topInset = MediaQuery.of(context).padding.top;
-    if (topInset <= 0) return const SizedBox.shrink();
-
-    final overlayColor = isDark
-        ? Colors.black.withValues(alpha: 0.18)
-        : Colors.white.withValues(alpha: 0.20);
-    final borderColor = isDark
-        ? Colors.white.withValues(alpha: 0.05)
-        : Colors.black.withValues(alpha: 0.05);
-
-    return IgnorePointer(
-      child: ClipRect(
-        child: SizedBox(
-          height: topInset + 10,
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: overlayColor,
-                border: Border(
-                  bottom: BorderSide(
-                    color: borderColor,
-                    width: 0.5,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}

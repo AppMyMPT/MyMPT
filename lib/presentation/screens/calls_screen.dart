@@ -4,6 +4,7 @@ import 'package:my_mpt/core/utils/calls_util.dart';
 import 'package:my_mpt/core/utils/date_formatter.dart';
 import 'package:my_mpt/presentation/widgets/calls/calls_header.dart';
 import 'package:my_mpt/presentation/widgets/calls/call_timeline_tile.dart';
+import 'package:my_mpt/presentation/widgets/shared/status_bar_blur_overlay.dart';
 
 class CallsScreen extends StatelessWidget {
   const CallsScreen({super.key});
@@ -23,7 +24,7 @@ class CallsScreen extends StatelessWidget {
 
     final List<Call> callsData = CallsUtil.getCalls();
     final weekType = DateFormatter.getWeekType(DateTime.now());
-    final contentTopPadding = 16.0 + (MediaQuery.of(context).padding.top * 0.35);
+    final contentTopPadding = 16.0 + MediaQuery.of(context).padding.top;
     final accentColor = weekType == 'Знаменатель' ? _denominatorColor : _numeratorColor;
 
     return Scaffold(
@@ -31,52 +32,62 @@ class CallsScreen extends StatelessWidget {
       body: SafeArea(
         top: false,
         bottom: false,
-        child: SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(16, contentTopPadding, 16, 110),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const CallsHeader(),
-              const SizedBox(height: 28),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 24,
-                ),
-                decoration: BoxDecoration(
-                  color: cardBg,
-                  borderRadius: BorderRadius.circular(28),
-                  boxShadow: [
-                    BoxShadow(
-                      color: shadowColor,
-                      blurRadius: 30,
-                      offset: const Offset(0, 18),
+        child: Stack(
+          children: [
+            SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(16, contentTopPadding, 16, 110),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const CallsHeader(),
+                  const SizedBox(height: 28),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 24,
                     ),
-                  ],
-                ),
-                child: Column(
-                  children: List.generate(callsData.length, (index) {
-                    final call = callsData[index];
-                    final isLast = index == callsData.length - 1;
-                    final isCurrent = CallsUtil.isCallCurrent(call.startTime, call.endTime);
-                    final nextCall = !isLast ? callsData[index + 1] : null;
-                    final isBreakCurrent = nextCall != null &&
-                        CallsUtil.isBreakCurrent(call.endTime, nextCall.startTime);
-                    return CallTimelineTile(
-                      period: call.period,
-                      startTime: call.startTime,
-                      endTime: call.endTime,
-                      description: call.description,
-                      showConnector: !isLast,
-                      isCurrent: isCurrent,
-                      currentAccentColor: accentColor,
-                      isBreakCurrent: isBreakCurrent,
-                    );
-                  }),
-                ),
+                    decoration: BoxDecoration(
+                      color: cardBg,
+                      borderRadius: BorderRadius.circular(28),
+                      boxShadow: [
+                        BoxShadow(
+                          color: shadowColor,
+                          blurRadius: 30,
+                          offset: const Offset(0, 18),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: List.generate(callsData.length, (index) {
+                        final call = callsData[index];
+                        final isLast = index == callsData.length - 1;
+                        final isCurrent = CallsUtil.isCallCurrent(call.startTime, call.endTime);
+                        final nextCall = !isLast ? callsData[index + 1] : null;
+                        final isBreakCurrent = nextCall != null &&
+                            CallsUtil.isBreakCurrent(call.endTime, nextCall.startTime);
+                        return CallTimelineTile(
+                          period: call.period,
+                          startTime: call.startTime,
+                          endTime: call.endTime,
+                          description: call.description,
+                          showConnector: !isLast,
+                          isCurrent: isCurrent,
+                          currentAccentColor: accentColor,
+                          isBreakCurrent: isBreakCurrent,
+                        );
+                      }),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: StatusBarBlurOverlay(isDark: isDark),
+            ),
+          ],
         ),
       ),
     );

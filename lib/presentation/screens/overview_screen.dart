@@ -18,6 +18,7 @@ import 'package:my_mpt/presentation/widgets/schedule/lesson_detail_sheet.dart';
 import 'package:my_mpt/presentation/widgets/shared/break_indicator.dart';
 import 'package:my_mpt/presentation/widgets/shared/lesson_card.dart';
 import 'package:my_mpt/presentation/widgets/shared/location.dart';
+import 'package:my_mpt/presentation/widgets/shared/status_bar_blur_overlay.dart';
 
 import 'package:my_mpt/presentation/widgets/settings/info_notification.dart';
 
@@ -311,7 +312,17 @@ class _OverviewScreenState extends State<OverviewScreen> {
         body: SafeArea(
           top: false,
           bottom: false,
-          child: Center(child: CircularProgressIndicator(color: progressColor)),
+          child: Stack(
+            children: [
+              Center(child: CircularProgressIndicator(color: progressColor)),
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: StatusBarBlurOverlay(isDark: isDark),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -324,14 +335,24 @@ class _OverviewScreenState extends State<OverviewScreen> {
         body: SafeArea(
           top: false,
           bottom: false,
-          child: RefreshIndicator(
-            onRefresh: () => fetchScheduleData(forceRefresh: true, userInitiated: true),
-            color: progressColor,
-            child: buildSchedulePage(
-              scheduleData,
-              pageTitle,
-              isDark: isDark,
-            ),
+          child: Stack(
+            children: [
+              RefreshIndicator(
+                onRefresh: () => fetchScheduleData(forceRefresh: true, userInitiated: true),
+                color: progressColor,
+                child: buildSchedulePage(
+                  scheduleData,
+                  pageTitle,
+                  isDark: isDark,
+                ),
+              ),
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: StatusBarBlurOverlay(isDark: isDark),
+              ),
+            ],
           ),
         ),
       );
@@ -368,6 +389,12 @@ class _OverviewScreenState extends State<OverviewScreen> {
               left: 0,
               right: 0,
               child: PageIndicator(currentPageIndex: currentPageIndex),
+            ),
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: StatusBarBlurOverlay(isDark: isDark),
             ),
           ],
         ),
@@ -408,6 +435,9 @@ class _OverviewScreenState extends State<OverviewScreen> {
       physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
       slivers: [
         SliverToBoxAdapter(
+          child: SizedBox(height: MediaQuery.of(context).padding.top),
+        ),
+        SliverToBoxAdapter(
           child: _StaticOverviewHeader(
             title: pageTitle,
             dateLabel: dateLabel,
@@ -415,7 +445,6 @@ class _OverviewScreenState extends State<OverviewScreen> {
             gradient: getHeaderGradient(weekType ?? '', isDark: isDark),
             isOffline: isOffline,
             statusIcon: _offlineStatusIcon(),
-            topInset: MediaQuery.of(context).padding.top,
           ),
         ),
         SliverPadding(
@@ -813,7 +842,6 @@ class _StaticOverviewHeader extends StatelessWidget {
     required this.gradient,
     required this.isOffline,
     required this.statusIcon,
-    required this.topInset,
   });
 
   final String title;
@@ -822,7 +850,6 @@ class _StaticOverviewHeader extends StatelessWidget {
   final List<Color> gradient;
   final bool isOffline;
   final IconData statusIcon;
-  final double topInset;
 
   @override
   Widget build(BuildContext context) {
@@ -851,11 +878,10 @@ class _StaticOverviewHeader extends StatelessWidget {
     const pillPV = 6.0;
     final estimatedPillHeight = pillFont + (pillPV * 2) + 6;
     final reservedTop = estimatedPillHeight + gapPillIcon;
-
     return SizedBox(
       height: _overviewHeaderHeight,
       child: Container(
-        margin: EdgeInsets.fromLTRB(16, 16 + (topInset * 0.35), 16, 0),
+        margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(radius),
           gradient: LinearGradient(
@@ -876,6 +902,10 @@ class _StaticOverviewHeader extends StatelessWidget {
           child: Stack(
             clipBehavior: Clip.none,
             children: [
+              Align(
+                alignment: Alignment.topLeft,
+                child: pill,
+              ),
               Align(
                 alignment: const Alignment(-1.0, -0.35),
                 child: Padding(
@@ -907,10 +937,6 @@ class _StaticOverviewHeader extends StatelessWidget {
                     ],
                   ),
                 ),
-              ),
-              Align(
-                alignment: Alignment.topLeft,
-                child: pill,
               ),
               Align(
                 alignment: const Alignment(1.0, 0.0),

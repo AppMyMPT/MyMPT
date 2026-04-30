@@ -1,3 +1,4 @@
+﻿import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -42,12 +43,14 @@ class ScheduleRemoteDatasource {
 
   final String baseUrl;
   final Duration cacheTtl;
+  static const Duration _requestTimeout = Duration(seconds: 8);
+  static const int _maxRetryAttempts = 3;
+  static const Duration _retryBaseDelay = Duration(milliseconds: 350);
 
   String? _cachedHtml;
   DateTime? _lastFetch;
-  
-  // Возвращаем на ту же самую страницу, потому что парсер преподавателей
-  // ищет их по таблицам студентов. Отдельной страницы /raspisanie-prepodavateley/ больше нет.
+
+  // Teacher parser uses the same page as student schedules.
   final String teacherBaseUrl = 'https://mpt.ru/raspisanie/';
   String? _cachedTeacherHtml;
   DateTime? _lastTeacherFetch;
@@ -60,7 +63,10 @@ class ScheduleRemoteDatasource {
     if (targetName.isEmpty) return {};
 
     try {
-      final html = await _fetchSchedulePage(forceRefresh: forceRefresh, isTeacher: isTeacher);
+      final html = await _fetchSchedulePage(
+        forceRefresh: forceRefresh,
+        isTeacher: isTeacher,
+      );
 
       final decoded = await compute(
         isTeacher ? _parseTeacherScheduleIsolate : _parseScheduleIsolate,
@@ -73,29 +79,36 @@ class ScheduleRemoteDatasource {
       });
 
       if (result.isEmpty) {
-        throw Exception('Сайт МПТ вернул пустую страницу или расписание для "$targetName" не найдено. Возможно, включена защита от ботов или ведутся технические работы.');
+        throw Exception(
+          'Сайт МПТ вернул пустую страницу или расписание для "$targetName" не найдено.',
+        );
       }
 
       return result;
     } catch (error) {
-      throw Exception('Error fetching schedule for ${isTeacher ? 'teacher' : 'group'} $targetName: $error');
+      throw Exception(
+        'Error fetching schedule for ${isTeacher ? 'teacher' : 'group'} $targetName: $error',
+      );
     }
   }
 
-  Future<String> _fetchSchedulePage({bool forceRefresh = false, bool isTeacher = false}) async {
+  Future<String> _fetchSchedulePage({
+    bool forceRefresh = false,
+    bool isTeacher = false,
+  }) async {
     final lastFetch = isTeacher ? _lastTeacherFetch : _lastFetch;
     final cachedHtml = isTeacher ? _cachedTeacherHtml : _cachedHtml;
-    
+
     final isCacheValid = cachedHtml != null &&
         lastFetch != null &&
         DateTime.now().difference(lastFetch) < cacheTtl;
 
     if (!forceRefresh && isCacheValid) {
-      return cachedHtml!;
+      return cachedHtml;
     }
 
     final freshHtml = await _loadFromNetwork(isTeacher: isTeacher);
-    
+
     if (isTeacher) {
       _cachedTeacherHtml = freshHtml;
       _lastTeacherFetch = DateTime.now();
@@ -103,27 +116,70 @@ class ScheduleRemoteDatasource {
       _cachedHtml = freshHtml;
       _lastFetch = DateTime.now();
     }
-    
+
     return freshHtml;
   }
 
   Future<String> _loadFromNetwork({bool isTeacher = false}) async {
     final url = isTeacher ? teacherBaseUrl : baseUrl;
-    
-    final response = await _client
-        .get(Uri.parse(url))
-        .timeout(
-          const Duration(seconds: 15),
-          onTimeout: () => throw const HttpException(
-            'Превышено время ожидания ответа от сервера (15 секунд)',
-          ),
-        );
+    final response = await _getWithRetry(Uri.parse(url));
+    return utf8.decode(response.bodyBytes);
+  }
 
-    if (response.statusCode != HttpStatus.ok) {
-      throw HttpException('Не удалось загрузить страницу: ${response.statusCode}');
+  Future<http.Response> _getWithRetry(Uri uri) async {
+    Object? lastError;
+
+    for (var attempt = 1; attempt <= _maxRetryAttempts; attempt++) {
+      try {
+        final response = await _client.get(uri).timeout(
+              _requestTimeout,
+              onTimeout: () => throw TimeoutException(
+                'Превышено время ожидания ответа от сервера',
+              ),
+            );
+
+        if (response.statusCode == HttpStatus.ok) {
+          return response;
+        }
+
+        if (!_isRetryableStatus(response.statusCode) ||
+            attempt == _maxRetryAttempts) {
+          throw HttpException(
+            'Не удалось загрузить страницу: ${response.statusCode}',
+          );
+        }
+      } catch (e) {
+        lastError = e;
+        if (!_isRetryableError(e) || attempt == _maxRetryAttempts) {
+          rethrow;
+        }
+      }
+
+      await Future.delayed(_retryDelayForAttempt(attempt));
     }
 
-    return utf8.decode(response.bodyBytes);
+    throw Exception('Ошибка загрузки сайта: $lastError');
+  }
+
+  bool _isRetryableStatus(int statusCode) {
+    return statusCode == 408 ||
+        statusCode == 425 ||
+        statusCode == 429 ||
+        statusCode == 500 ||
+        statusCode == 502 ||
+        statusCode == 503 ||
+        statusCode == 504;
+  }
+
+  bool _isRetryableError(Object error) {
+    return error is SocketException ||
+        error is TimeoutException ||
+        error is HandshakeException ||
+        error is HttpException;
+  }
+
+  Duration _retryDelayForAttempt(int attempt) {
+    return _retryBaseDelay * attempt;
   }
 
   void clearCache() {

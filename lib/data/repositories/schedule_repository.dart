@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:my_mpt/data/datasources/cache/schedule_cache_data_source.dart';
@@ -33,10 +33,10 @@ class ScheduleRepository implements ScheduleRepositoryInterface {
   bool _lastRefreshSucceeded = true;
   ScheduleRefreshFailureReason _lastFailureReason = ScheduleRefreshFailureReason.none;
 
-  static const Duration _failedRefreshCooldown = Duration(minutes: 10);
+  static const Duration _failedRefreshCooldown = Duration(seconds: 45);
 
-  /// Дедупликация обновления: если refresh уже идёт — ждём тот же Future.
   Future<bool>? _refreshInFlight;
+  bool _refreshInFlightForce = false;
 
   final ValueNotifier<bool> dataUpdatedNotifier = ValueNotifier<bool>(false);
 
@@ -55,11 +55,16 @@ class ScheduleRepository implements ScheduleRepositoryInterface {
   Future<Map<String, List<Schedule>>> getWeeklySchedule() async {
     await _restoreCacheIfNeeded();
 
-    final needRefresh = _shouldRefreshData() || _cachedWeeklySchedule == null;
-    final canTryRefresh = !_isInFailedCooldown() || _cachedWeeklySchedule == null;
+    final hasLocalData = _cachedWeeklySchedule != null;
+    final needRefresh = _shouldRefreshData() || !hasLocalData;
+    final canTryRefresh = !hasLocalData || !_isInFailedCooldown();
 
     if (needRefresh && canTryRefresh) {
-      await _refreshAllData(forceRefresh: false);
+      if (hasLocalData) {
+        unawaited(refreshAllDataWithStatus(forceRefresh: false));
+      } else {
+        await refreshAllDataWithStatus(forceRefresh: false);
+      }
     }
 
     return _cachedWeeklySchedule ?? {};
@@ -69,11 +74,16 @@ class ScheduleRepository implements ScheduleRepositoryInterface {
   Future<List<Schedule>> getTodaySchedule() async {
     await _restoreCacheIfNeeded();
 
-    final needRefresh = _shouldRefreshData() || _cachedTodaySchedule == null;
-    final canTryRefresh = !_isInFailedCooldown() || _cachedTodaySchedule == null;
+    final hasLocalData = _cachedTodaySchedule != null;
+    final needRefresh = _shouldRefreshData() || !hasLocalData;
+    final canTryRefresh = !hasLocalData || !_isInFailedCooldown();
 
     if (needRefresh && canTryRefresh) {
-      await _refreshAllData(forceRefresh: false);
+      if (hasLocalData) {
+        unawaited(refreshAllDataWithStatus(forceRefresh: false));
+      } else {
+        await refreshAllDataWithStatus(forceRefresh: false);
+      }
     }
 
     return _cachedTodaySchedule ?? [];
@@ -83,18 +93,21 @@ class ScheduleRepository implements ScheduleRepositoryInterface {
   Future<List<Schedule>> getTomorrowSchedule() async {
     await _restoreCacheIfNeeded();
 
-    final needRefresh = _shouldRefreshData() || _cachedTomorrowSchedule == null;
-    final canTryRefresh =
-        !_isInFailedCooldown() || _cachedTomorrowSchedule == null;
+    final hasLocalData = _cachedTomorrowSchedule != null;
+    final needRefresh = _shouldRefreshData() || !hasLocalData;
+    final canTryRefresh = !hasLocalData || !_isInFailedCooldown();
 
     if (needRefresh && canTryRefresh) {
-      await _refreshAllData(forceRefresh: false);
+      if (hasLocalData) {
+        unawaited(refreshAllDataWithStatus(forceRefresh: false));
+      } else {
+        await refreshAllDataWithStatus(forceRefresh: false);
+      }
     }
 
     return _cachedTomorrowSchedule ?? [];
   }
 
-  /// Получить расписание на неделю для указанного преподавателя (без смены текущей роли/кэша).
   Future<Map<String, List<Schedule>>> getWeeklyScheduleForTeacher(String teacherName) async {
     if (teacherName.trim().isEmpty) return {};
     try {
@@ -125,7 +138,6 @@ class ScheduleRepository implements ScheduleRepositoryInterface {
     }
   }
 
-  /// Совместимость: старый публичный метод остаётся.
   Future<void> refreshAllData() async {
     await refreshAllDataWithStatus(forceRefresh: true);
   }
@@ -139,8 +151,6 @@ class ScheduleRepository implements ScheduleRepositoryInterface {
     return ok;
   }
 
-  /// Совместимость: старый метод оставляем (используется в OverviewScreen),
-  /// но "красивый" статус даём отдельным методом.
   Future<void> forceRefresh() async {
     await forceRefreshWithStatus();
   }
@@ -156,17 +166,21 @@ class ScheduleRepository implements ScheduleRepositoryInterface {
 
   bool _isInFailedCooldown() {
     if (_lastFailedRefreshAttempt == null) return false;
-    return DateTime.now().difference(_lastFailedRefreshAttempt!) <
-        _failedRefreshCooldown;
+    return DateTime.now().difference(_lastFailedRefreshAttempt!) < _failedRefreshCooldown;
   }
 
-  /// Дедупликация: если уже обновляемся — не стартуем второй запрос.
   Future<bool> _refreshAllData({required bool forceRefresh}) {
     final inFlight = _refreshInFlight;
-    if (inFlight != null) return inFlight;
+    if (inFlight != null) {
+      if (forceRefresh && !_refreshInFlightForce) {
+        return inFlight.then((_) => _refreshAllData(forceRefresh: true));
+      }
+      return inFlight;
+    }
 
     final completer = Completer<bool>();
     _refreshInFlight = completer.future;
+    _refreshInFlightForce = forceRefresh;
 
     () async {
       try {
@@ -176,6 +190,7 @@ class ScheduleRepository implements ScheduleRepositoryInterface {
         completer.complete(false);
       } finally {
         _refreshInFlight = null;
+        _refreshInFlightForce = false;
       }
     }();
 
@@ -186,19 +201,19 @@ class ScheduleRepository implements ScheduleRepositoryInterface {
     try {
       final prefs = await SharedPreferences.getInstance();
       final role = prefs.getString(_selectedRoleKey) ?? 'student';
-      
+
       String targetName = '';
       bool isTeacher = false;
-      
+
       if (role == 'student') {
-         targetName = await _getSelectedGroupCode();
+        targetName = await _getSelectedGroupCode();
       } else {
-         targetName = prefs.getString(_teacherNameKey) ?? '';
-         isTeacher = true;
+        targetName = prefs.getString(_teacherNameKey) ?? '';
+        isTeacher = true;
       }
 
       if (targetName.isEmpty) {
-        await _clearCache(); // тут реально нечего показывать
+        await _clearCache();
         _lastRefreshSucceeded = false;
         _lastFailureReason = ScheduleRefreshFailureReason.selectionNotChosen;
         return false;
@@ -207,7 +222,7 @@ class ScheduleRepository implements ScheduleRepositoryInterface {
       final parsedSchedule = await _remoteDatasource.fetchWeeklySchedule(
         targetName,
         forceRefresh: forceRefresh,
-        isTeacher: isTeacher
+        isTeacher: isTeacher,
       );
 
       final Map<String, List<Schedule>> weeklySchedule = {};
@@ -250,8 +265,6 @@ class ScheduleRepository implements ScheduleRepositoryInterface {
       _lastFailedRefreshAttempt = DateTime.now();
       _lastRefreshSucceeded = false;
       _lastFailureReason = _classifyRefreshError(e);
-
-      // Ключевой момент: кэш НЕ очищаем — офлайн-просмотр сохраняется.
       return false;
     }
   }
@@ -279,12 +292,10 @@ class ScheduleRepository implements ScheduleRepositoryInterface {
       if (cache == null) return;
 
       _cachedWeeklySchedule = cache.weeklySchedule;
-      // today/tomorrow теперь считаем из weekly (без дублей в prefs).
       _cachedTodaySchedule = (_cachedWeeklySchedule ?? {})[_getTodayInRussian()] ?? [];
       _cachedTomorrowSchedule = (_cachedWeeklySchedule ?? {})[_getTomorrowInRussian()] ?? [];
       _lastUpdate = cache.lastUpdate;
 
-      // Если у нас есть кэш — считаем, что "данные есть", даже если сеть потом пропадёт.
       _lastRefreshSucceeded = true;
       _lastFailureReason = ScheduleRefreshFailureReason.none;
     } catch (_) {
@@ -304,15 +315,15 @@ class ScheduleRepository implements ScheduleRepositoryInterface {
         text.contains('failed host lookup') ||
         text.contains('network is unreachable') ||
         text.contains('connection refused') ||
-        text.contains('connection reset')) {
+        text.contains('connection reset') ||
+        text.contains('timeoutexception')) {
       return ScheduleRefreshFailureReason.noInternet;
     }
 
     if (text.contains('httpexception') ||
         text.contains('statuscode') ||
         text.contains('status code') ||
-        text.contains('не удалось загрузить страницу') ||
-        text.contains('превышено время ожидания ответа от сервера') ||
+        text.contains('превышено время ожидания') ||
         text.contains('handshakeexception') ||
         text.contains('cert_has_expired') ||
         text.contains('certificate has expired') ||

@@ -1,37 +1,29 @@
-import 'package:my_mpt/data/datasources/remote/speciality_remote_datasource.dart';
-import 'package:my_mpt/domain/repositories/specialty_repository_interface.dart';
+﻿import 'package:my_mpt/data/datasources/remote/speciality_remote_datasource.dart';
 import 'package:my_mpt/domain/entities/specialty.dart';
+import 'package:my_mpt/domain/repositories/specialty_repository_interface.dart';
 
 class SpecialtyRepository implements SpecialtyRepositoryInterface {
-  final SpecialityRemoteDatasource _parserService =
-      SpecialityRemoteDatasource();
+  final SpecialityRemoteDatasource _parserService = SpecialityRemoteDatasource();
 
-  // Кэш для специальностей
   List<Specialty>? _cachedSpecialties;
   Map<String, String>? _codeToNameCache;
 
   @override
-  Future<List<Specialty>> getSpecialties() async {
+  Future<List<Specialty>> getSpecialties({bool forceRefresh = false}) async {
     try {
-      // Используем кэш, если он есть
-      if (_cachedSpecialties != null) {
+      if (!forceRefresh && _cachedSpecialties != null && _cachedSpecialties!.isNotEmpty) {
         return _cachedSpecialties!;
       }
 
-      final tabs = await _parserService.parseTabList();
-      final specialties = tabs
-          .map((tab) => _createSpecialtyFromTab(tab))
-          .toList();
-
+      final tabs = await _parserService.parseTabList(forceRefresh: forceRefresh);
+      final specialties = tabs.map(_createSpecialtyFromTab).toList();
       specialties.sort((a, b) => a.name.compareTo(b.name));
 
-      // Сохраняем в кэш
       _cachedSpecialties = specialties;
-      _codeToNameCache = {for (var s in specialties) s.code: s.name};
-
+      _codeToNameCache = {for (final s in specialties) s.code: s.name};
       return specialties;
-    } catch (e) {
-      return [];
+    } catch (_) {
+      return _cachedSpecialties ?? [];
     }
   }
 
@@ -40,9 +32,7 @@ class SpecialtyRepository implements SpecialtyRepositoryInterface {
     String name = tab['name'] ?? '';
 
     if (code.startsWith('#specialty-')) {
-      code = code
-          .substring(11)
-          .toUpperCase();
+      code = code.substring(11).toUpperCase();
     } else if (code.startsWith('#')) {
       code = name;
     }
@@ -54,23 +44,16 @@ class SpecialtyRepository implements SpecialtyRepositoryInterface {
     return Specialty(code: code, name: name);
   }
 
-  // Метод для получения имени специальности по коду из кэша
   String? getSpecialtyNameByCode(String code) {
-    // Сначала попробуем найти по ключу
     final result = _codeToNameCache?[code];
-    if (result != null) {
-      return result;
-    }
+    if (result != null) return result;
 
-    // Если не нашли по ключу, попробуем найти по значению
     if (_codeToNameCache != null) {
-      for (var entry in _codeToNameCache!.entries) {
-        if (entry.value == code) {
-          return entry.value;
-        }
+      for (final entry in _codeToNameCache!.entries) {
+        if (entry.value == code) return entry.value;
       }
     }
 
-    return result;
+    return null;
   }
 }

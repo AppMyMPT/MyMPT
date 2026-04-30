@@ -1,4 +1,6 @@
+﻿import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:html/parser.dart' as parser;
@@ -7,7 +9,6 @@ import 'package:my_mpt/data/models/group.dart';
 import 'package:my_mpt/data/parsers/group_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// message -> {'html': String, 'specialtyFilter': String?}
 List<Map<String, dynamic>> _parseGroupsIsolate(Map<String, dynamic> message) {
   final html = message['html'] as String? ?? '';
   final filter = message['specialtyFilter'] as String?;
@@ -15,25 +16,21 @@ List<Map<String, dynamic>> _parseGroupsIsolate(Map<String, dynamic> message) {
 
   final groups = GroupParser().parseGroups(document, filter);
 
-  return groups
-      .whereType<Group>()
-      .map((g) => g.toJson())
-      .toList();
+  return groups.whereType<Group>().map((g) => g.toJson()).toList();
 }
 
-/// Сервис для парсинга групп с сайта МПТ
 class GroupRemoteDatasource {
   GroupRemoteDatasource({http.Client? client}) : _client = client ?? http.Client();
 
   final http.Client _client;
 
-  /// Базовый URL сайта с расписанием
   final String baseUrl = 'https://mpt.ru/raspisanie/';
 
-  /// Время жизни кэша (24 часа)
   static const Duration _cacheTtl = Duration(hours: 24);
+  static const Duration _requestTimeout = Duration(seconds: 8);
+  static const int _maxRetryAttempts = 3;
+  static const Duration _retryBaseDelay = Duration(milliseconds: 350);
 
-  /// Ключи для кэширования
   static const String _cacheKeyGroups = 'mpt_parser_groups_';
   static const String _cacheKeyGroupsTimestamp = 'mpt_parser_groups_timestamp_';
 
@@ -54,19 +51,7 @@ class GroupRemoteDatasource {
         if (cached != null && cached.isNotEmpty) return cached;
       }
 
-      final response = await _client
-          .get(Uri.parse(baseUrl))
-          .timeout(
-            const Duration(seconds: 15),
-            onTimeout: () => throw Exception(
-              'Превышено время ожидания ответа от сервера (15 секунд)',
-            ),
-          );
-
-      if (response.statusCode != 200) {
-        throw Exception('Не удалось загрузить страницу: ${response.statusCode}');
-      }
-
+      final response = await _getWithRetry(Uri.parse(baseUrl));
       final html = utf8.decode(response.bodyBytes);
 
       final decoded = await compute(
@@ -75,7 +60,6 @@ class GroupRemoteDatasource {
       );
 
       final groups = decoded.map(Group.fromJson).toList();
-      
       if (groups.isEmpty) {
         throw Exception('Сайт МПТ не вернул список групп.');
       }
@@ -83,7 +67,6 @@ class GroupRemoteDatasource {
       await _saveCachedGroups(null, groups);
       return groups;
     } catch (e) {
-      // Если принудительное обновление не удалось, пробуем отдать кэш, даже если он старый
       final fallbackCache = await _getCachedGroups(null, ignoreTtl: true);
       if (fallbackCache != null && fallbackCache.isNotEmpty) {
         return fallbackCache;
@@ -102,19 +85,7 @@ class GroupRemoteDatasource {
         if (cached != null && cached.isNotEmpty) return cached;
       }
 
-      final response = await _client
-          .get(Uri.parse(baseUrl))
-          .timeout(
-            const Duration(seconds: 15),
-            onTimeout: () => throw Exception(
-              'Превышено время ожидания ответа от сервера (15 секунд)',
-            ),
-          );
-
-      if (response.statusCode != 200) {
-        throw Exception('Не удалось загрузить страницу: ${response.statusCode}');
-      }
-
+      final response = await _getWithRetry(Uri.parse(baseUrl));
       final html = utf8.decode(response.bodyBytes);
 
       final decoded = await compute(
@@ -123,21 +94,79 @@ class GroupRemoteDatasource {
       );
 
       final groups = decoded.map(Group.fromJson).toList();
-
       if (groups.isEmpty) {
-        throw Exception('Сайт МПТ не вернул список групп для специальности "$specialtyFilter".');
+        throw Exception(
+          'Сайт МПТ не вернул список групп для специальности "$specialtyFilter".',
+        );
       }
 
       await _saveCachedGroups(specialtyFilter, groups);
       return groups;
     } catch (e) {
-      // Если принудительное обновление не удалось, пробуем отдать кэш
       final fallbackCache = await _getCachedGroups(specialtyFilter, ignoreTtl: true);
       if (fallbackCache != null && fallbackCache.isNotEmpty) {
         return fallbackCache;
       }
-      throw Exception('Ошибка при парсинге групп для специальности "$specialtyFilter": $e');
+      throw Exception(
+        'Ошибка при парсинге групп для специальности "$specialtyFilter": $e',
+      );
     }
+  }
+
+  Future<http.Response> _getWithRetry(Uri uri) async {
+    Object? lastError;
+
+    for (var attempt = 1; attempt <= _maxRetryAttempts; attempt++) {
+      try {
+        final response = await _client.get(uri).timeout(
+              _requestTimeout,
+              onTimeout: () => throw TimeoutException(
+                'Превышено время ожидания ответа от сервера',
+              ),
+            );
+
+        if (response.statusCode == HttpStatus.ok) {
+          return response;
+        }
+
+        if (!_isRetryableStatus(response.statusCode) ||
+            attempt == _maxRetryAttempts) {
+          throw HttpException(
+            'Не удалось загрузить страницу: ${response.statusCode}',
+          );
+        }
+      } catch (e) {
+        lastError = e;
+        if (!_isRetryableError(e) || attempt == _maxRetryAttempts) {
+          rethrow;
+        }
+      }
+
+      await Future.delayed(_retryDelayForAttempt(attempt));
+    }
+
+    throw Exception('Ошибка загрузки сайта: $lastError');
+  }
+
+  bool _isRetryableStatus(int statusCode) {
+    return statusCode == 408 ||
+        statusCode == 425 ||
+        statusCode == 429 ||
+        statusCode == 500 ||
+        statusCode == 502 ||
+        statusCode == 503 ||
+        statusCode == 504;
+  }
+
+  bool _isRetryableError(Object error) {
+    return error is SocketException ||
+        error is TimeoutException ||
+        error is HandshakeException ||
+        error is HttpException;
+  }
+
+  Duration _retryDelayForAttempt(int attempt) {
+    return _retryBaseDelay * attempt;
   }
 
   Future<List<Group>?> _getCachedGroups(String? specialtyFilter, {bool ignoreTtl = false}) async {
@@ -161,18 +190,13 @@ class GroupRemoteDatasource {
         if (ignoreTtl || age < _cacheTtl) {
           final List<dynamic> decoded = jsonDecode(cachedJson);
           final result = decoded
-              .map(
-                (json) => Group.fromJson(json as Map<String, dynamic>),
-              )
+              .map((json) => Group.fromJson(json as Map<String, dynamic>))
               .toList();
-              
+
           if (result.isNotEmpty) return result;
-        } else {
-          // Удаляем только если TTL истек и мы не игнорируем TTL (во время обычной загрузки)
-          if (!ignoreTtl) {
-            await prefs.remove(cacheKey);
-            await prefs.remove(timestampKey);
-          }
+        } else if (!ignoreTtl) {
+          await prefs.remove(cacheKey);
+          await prefs.remove(timestampKey);
         }
       }
     } catch (_) {}

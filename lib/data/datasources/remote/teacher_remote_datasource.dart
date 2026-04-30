@@ -1,7 +1,10 @@
+﻿import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as parser;
+import 'package:http/http.dart' as http;
 import 'package:my_mpt/data/models/teacher.dart';
 import 'package:my_mpt/data/parsers/teacher_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -9,7 +12,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 List<Map<String, dynamic>> _parseTeacherIsolate(Map<String, dynamic> message) {
   final html = message['html'] as String? ?? '';
   final document = parser.parse(html);
-  
+
   final teachers = TeacherParser().parse(document.outerHtml);
   return teachers.map((t) => t.toJson()).toList();
 }
@@ -25,6 +28,10 @@ class TeacherRemoteDatasource {
   final String baseUrl;
   final Duration cacheTtl;
 
+  static const Duration _requestTimeout = Duration(seconds: 8);
+  static const int _maxRetryAttempts = 3;
+  static const Duration _retryBaseDelay = Duration(milliseconds: 350);
+
   static const String _cacheKeyTeachers = 'mpt_parser_teachers';
   static const String _cacheKeyTeachersTimestamp = 'mpt_parser_teachers_timestamp';
 
@@ -35,27 +42,14 @@ class TeacherRemoteDatasource {
         if (cached != null && cached.isNotEmpty) return cached;
       }
 
-      final response = await _client
-          .get(Uri.parse(baseUrl))
-          .timeout(
-            const Duration(seconds: 15),
-            onTimeout: () => throw Exception(
-              'Превышено время ожидания ответа от сервера (15 секунд)',
-            ),
-          );
-
-      if (response.statusCode != 200) {
-        throw Exception('Не удалось загрузить страницу: ${response.statusCode}');
-      }
-
+      final response = await _getWithRetry(Uri.parse(baseUrl));
       final html = utf8.decode(response.bodyBytes);
 
       final decoded = await compute(_parseTeacherIsolate, {'html': html});
-
       final teachers = decoded.map((map) => Teacher.fromJson(map)).toList();
 
       if (teachers.isEmpty) {
-        throw Exception('Сайт МПТ не вернул список преподавателей. Возможно, страница недоступна.');
+        throw Exception('Сайт МПТ не вернул список преподавателей.');
       }
 
       await _saveCachedTeachers(teachers);
@@ -67,6 +61,62 @@ class TeacherRemoteDatasource {
       }
       throw Exception('Ошибка при получении преподавателей: $e');
     }
+  }
+
+  Future<http.Response> _getWithRetry(Uri uri) async {
+    Object? lastError;
+
+    for (var attempt = 1; attempt <= _maxRetryAttempts; attempt++) {
+      try {
+        final response = await _client.get(uri).timeout(
+              _requestTimeout,
+              onTimeout: () => throw TimeoutException(
+                'Превышено время ожидания ответа от сервера',
+              ),
+            );
+
+        if (response.statusCode == HttpStatus.ok) {
+          return response;
+        }
+
+        if (!_isRetryableStatus(response.statusCode) ||
+            attempt == _maxRetryAttempts) {
+          throw HttpException(
+            'Не удалось загрузить страницу: ${response.statusCode}',
+          );
+        }
+      } catch (e) {
+        lastError = e;
+        if (!_isRetryableError(e) || attempt == _maxRetryAttempts) {
+          rethrow;
+        }
+      }
+
+      await Future.delayed(_retryDelayForAttempt(attempt));
+    }
+
+    throw Exception('Ошибка загрузки сайта: $lastError');
+  }
+
+  bool _isRetryableStatus(int statusCode) {
+    return statusCode == 408 ||
+        statusCode == 425 ||
+        statusCode == 429 ||
+        statusCode == 500 ||
+        statusCode == 502 ||
+        statusCode == 503 ||
+        statusCode == 504;
+  }
+
+  bool _isRetryableError(Object error) {
+    return error is SocketException ||
+        error is TimeoutException ||
+        error is HandshakeException ||
+        error is HttpException;
+  }
+
+  Duration _retryDelayForAttempt(int attempt) {
+    return _retryBaseDelay * attempt;
   }
 
   Future<List<Teacher>?> _getCachedTeachers({bool ignoreTtl = false}) async {
@@ -85,13 +135,11 @@ class TeacherRemoteDatasource {
           final result = decoded
               .map((json) => Teacher.fromJson(json as Map<String, dynamic>))
               .toList();
-              
+
           if (result.isNotEmpty) return result;
-        } else {
-          if (!ignoreTtl) {
-            await prefs.remove(_cacheKeyTeachers);
-            await prefs.remove(_cacheKeyTeachersTimestamp);
-          }
+        } else if (!ignoreTtl) {
+          await prefs.remove(_cacheKeyTeachers);
+          await prefs.remove(_cacheKeyTeachersTimestamp);
         }
       }
     } catch (_) {}
