@@ -23,14 +23,16 @@ class CallsScreen extends StatelessWidget {
 
     final List<Call> callsData = CallsUtil.getCalls();
     final weekType = DateFormatter.getWeekType(DateTime.now());
+    final contentTopPadding = 16.0 + (MediaQuery.of(context).padding.top * 0.35);
     final accentColor = weekType == 'Знаменатель' ? _denominatorColor : _numeratorColor;
 
     return Scaffold(
       backgroundColor: bg,
       body: SafeArea(
+        top: false,
         bottom: false,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
+          padding: EdgeInsets.fromLTRB(16, contentTopPadding, 16, 110),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

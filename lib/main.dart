@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:io' show Platform;
+import 'dart:ui' show ImageFilter;
 
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -180,11 +182,11 @@ class _MainScreenState extends State<MainScreen> {
   bool _updateChecked = false;
 
   late final List<Widget> _screens = <Widget>[
-    OverviewScreen(forcedPage: 0),
-    OverviewScreen(forcedPage: 1),
-    const ScheduleScreen(),
-    const CallsScreen(),
-    const SettingsScreen(),
+    RepaintBoundary(child: OverviewScreen(forcedPage: 0)),
+    RepaintBoundary(child: OverviewScreen(forcedPage: 1)),
+    const RepaintBoundary(child: ScheduleScreen()),
+    const RepaintBoundary(child: CallsScreen()),
+    const RepaintBoundary(child: SettingsScreen()),
   ];
 
   final List<_NavItemData> _navItems = const [
@@ -281,6 +283,13 @@ class _MainScreenState extends State<MainScreen> {
     }
 
     final int selectedNavIndex = _currentIndex <= 1 ? 0 : _currentIndex - 1;
+    void handleNavTap(int index) {
+      if (index == 0) {
+        _goToPage(0);
+      } else {
+        _goToPage(index + 1);
+      }
+    }
 
     final isNumerator = DateFormatter.getWeekType(DateTime.now()) == 'Числитель';
     final Color activeColor =
@@ -296,13 +305,28 @@ class _MainScreenState extends State<MainScreen> {
       bottomNavigationBar = NativeGlassNavBar(
         currentIndex: selectedNavIndex,
         tintColor: activeColor,
-        onTap: (index) {
-          if (index == 0) {
-            _goToPage(0);
-          } else {
-            _goToPage(index + 1);
-          }
-        },
+        onTap: handleNavTap,
+        fallback: CupertinoTabBar(
+          currentIndex: selectedNavIndex,
+          onTap: handleNavTap,
+          activeColor: activeColor,
+          inactiveColor: CupertinoDynamicColor.resolve(CupertinoColors.inactiveGray, context),
+          backgroundColor: CupertinoDynamicColor.resolve(CupertinoColors.systemGrey6, context),
+          border: Border(
+            top: BorderSide(
+              color: CupertinoDynamicColor.resolve(CupertinoColors.separator, context),
+              width: 0,
+            ),
+          ),
+          items: [
+            for (final item in _navItems)
+              BottomNavigationBarItem(
+                icon: Icon(item.icon),
+                activeIcon: Icon(item.selectedIcon),
+                label: item.label,
+              ),
+          ],
+        ),
         tabs: [
           for (final item in _navItems)
             NativeGlassNavBarItem(
@@ -339,13 +363,7 @@ class _MainScreenState extends State<MainScreen> {
           ),
           child: NavigationBar(
             selectedIndex: selectedNavIndex,
-            onDestinationSelected: (index) {
-              if (index == 0) {
-                _goToPage(0);
-              } else {
-                _goToPage(index + 1);
-              }
-            },
+            onDestinationSelected: handleNavTap,
             surfaceTintColor: Colors.transparent,
             destinations: [
               for (final item in _navItems)
@@ -373,6 +391,13 @@ class _MainScreenState extends State<MainScreen> {
               },
               children: _screens,
             ),
+            if (isIOS)
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: _StatusBarBlurOverlay(isDark: isDark),
+              ),
             if (_currentIndex == 0 || _currentIndex == 1)
               Positioned(
                 left: 0,
@@ -385,6 +410,47 @@ class _MainScreenState extends State<MainScreen> {
           ],
         ),
         bottomNavigationBar: bottomNavigationBar,
+      ),
+    );
+  }
+}
+
+class _StatusBarBlurOverlay extends StatelessWidget {
+  const _StatusBarBlurOverlay({required this.isDark});
+
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    final topInset = MediaQuery.of(context).padding.top;
+    if (topInset <= 0) return const SizedBox.shrink();
+
+    final overlayColor = isDark
+        ? Colors.black.withValues(alpha: 0.18)
+        : Colors.white.withValues(alpha: 0.20);
+    final borderColor = isDark
+        ? Colors.white.withValues(alpha: 0.05)
+        : Colors.black.withValues(alpha: 0.05);
+
+    return IgnorePointer(
+      child: ClipRect(
+        child: SizedBox(
+          height: topInset + 10,
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: overlayColor,
+                border: Border(
+                  bottom: BorderSide(
+                    color: borderColor,
+                    width: 0.5,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

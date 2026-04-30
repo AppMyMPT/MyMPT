@@ -309,6 +309,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
       return Scaffold(
         backgroundColor: bg,
         body: SafeArea(
+          top: false,
           bottom: false,
           child: Center(child: CircularProgressIndicator(color: progressColor)),
         ),
@@ -321,6 +322,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
       return Scaffold(
         backgroundColor: bg,
         body: SafeArea(
+          top: false,
           bottom: false,
           child: RefreshIndicator(
             onRefresh: () => fetchScheduleData(forceRefresh: true, userInitiated: true),
@@ -338,6 +340,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
     return Scaffold(
       backgroundColor: bg,
       body: SafeArea(
+        top: false,
         bottom: false,
         child: Stack(
           children: [
@@ -412,6 +415,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
             gradient: getHeaderGradient(weekType ?? '', isDark: isDark),
             isOffline: isOffline,
             statusIcon: _offlineStatusIcon(),
+            topInset: MediaQuery.of(context).padding.top,
           ),
         ),
         SliverPadding(
@@ -809,6 +813,7 @@ class _StaticOverviewHeader extends StatelessWidget {
     required this.gradient,
     required this.isOffline,
     required this.statusIcon,
+    required this.topInset,
   });
 
   final String title;
@@ -817,6 +822,7 @@ class _StaticOverviewHeader extends StatelessWidget {
   final List<Color> gradient;
   final bool isOffline;
   final IconData statusIcon;
+  final double topInset;
 
   @override
   Widget build(BuildContext context) {
@@ -849,7 +855,7 @@ class _StaticOverviewHeader extends StatelessWidget {
     return SizedBox(
       height: _overviewHeaderHeight,
       child: Container(
-        margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+        margin: EdgeInsets.fromLTRB(16, 16 + (topInset * 0.35), 16, 0),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(radius),
           gradient: LinearGradient(

@@ -210,6 +210,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       backgroundColor: bg,
       body: isInitialLoading
           ? SafeArea(
+              top: false,
               bottom: false,
               child: Center(child: CircularProgressIndicator(color: progressColor)),
             )
@@ -342,11 +343,13 @@ class _HeightPinnedHeaderDelegate extends SliverPersistentHeaderDelegate {
     final range = (maxHeight - minHeight).abs() < 1 ? 1.0 : (maxHeight - minHeight);
     final t = (actualShrinkOffset / range).clamp(0.0, 1.0);
 
-    final blurSigma = lerpDouble(0, 20, Curves.easeOut.transform(t))!;
+    final isIOS = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+    final blurStrength = isIOS ? 12.0 : 20.0;
+    final blurSigma = lerpDouble(0, blurStrength, Curves.easeOut.transform(t))!;
     final baseAlpha = backgroundColor.a;
     final overlayAlpha = lerpDouble(baseAlpha, baseAlpha * 0.4, Curves.easeOut.transform(t))!;
     
-    final extraBlurPadding = 20.0; // Extend blur slightly below the top padding 
+    final extraBlurPadding = isIOS ? 12.0 : 20.0; // Keep iOS blur area smaller for smoother scrolling. 
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -378,7 +381,7 @@ class _HeightPinnedHeaderDelegate extends SliverPersistentHeaderDelegate {
                       left: 0,
                       right: 0,
                       height: paddingTop + lerpDouble(16, 8 + extraBlurPadding, Curves.easeOutCubic.transform(t))!,
-                      child: blurSigma > 0.1
+                      child: blurSigma > 0.15
                           ? ClipRect(
                               child: BackdropFilter(
                                 filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
@@ -600,6 +603,7 @@ class _WeekTypePill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isIOS = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 
     final bg = isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.06);
     final border = isDark ? Colors.white.withValues(alpha: 0.12) : Colors.black.withValues(alpha: 0.08);
@@ -607,29 +611,35 @@ class _WeekTypePill extends StatelessWidget {
 
     final radius = BorderRadius.circular(14);
 
+    final pillContent = Container(
+      padding: EdgeInsets.symmetric(horizontal: padH, vertical: padV),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: radius,
+        border: Border.all(color: border),
+      ),
+      child: Text(
+        text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          fontSize: fontSize,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.3,
+          color: fg,
+        ),
+      ),
+    );
+
+    if (isIOS) {
+      return ClipRRect(borderRadius: radius, child: pillContent);
+    }
+
     return ClipRRect(
       borderRadius: radius,
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-        child: Container(
-          padding: EdgeInsets.symmetric(horizontal: padH, vertical: padV),
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: radius,
-            border: Border.all(color: border),
-          ),
-          child: Text(
-            text,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: fontSize,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.3,
-              color: fg,
-            ),
-          ),
-        ),
+        child: pillContent,
       ),
     );
   }
