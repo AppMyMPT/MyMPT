@@ -1043,21 +1043,43 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      isDismissible: true,
+      enableDrag: true,
       backgroundColor: Colors.transparent,
       builder: (BuildContext context) {
-        final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-        return AnimatedPadding(
-          duration: const Duration(milliseconds: 180),
-          curve: Curves.easeOut,
-          padding: EdgeInsets.only(bottom: bottomInset),
-          child: SizedBox(
-            height: MediaQuery.of(context).size.height * 0.7,
-            child: Container(
-              decoration: BoxDecoration(
-            color: cs.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-              child: StatefulBuilder(
+        final mediaQuery = MediaQuery.of(context);
+        final screenHeight = mediaQuery.size.height;
+        final keyboardInset = mediaQuery.viewInsets.bottom;
+        final topSafeMargin = mediaQuery.padding.top + 48.0;
+        final baseSheetHeight = (screenHeight * 0.62).clamp(420.0, 620.0).toDouble();
+        final maxSheetHeight = screenHeight - topSafeMargin;
+        final availableHeight = screenHeight - keyboardInset - topSafeMargin;
+        final sheetHeight = keyboardInset > 0
+            ? baseSheetHeight.clamp(320.0, availableHeight)
+            : baseSheetHeight.clamp(320.0, maxSheetHeight);
+
+        return SizedBox(
+          height: screenHeight,
+          child: Stack(
+            alignment: Alignment.bottomCenter,
+            children: [
+              Positioned.fill(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => Navigator.of(context).pop(),
+                  child: const SizedBox.expand(),
+                ),
+              ),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOut,
+                margin: EdgeInsets.only(bottom: keyboardInset),
+                height: sheetHeight.toDouble(),
+                decoration: BoxDecoration(
+                  color: cs.surface,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                ),
+                child: StatefulBuilder(
             builder: (context, setModalState) {
               final q = searchController.text.trim().toLowerCase();
               final filteredTeachers = q.isEmpty
@@ -1074,6 +1096,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       color: cs.onSurface.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(2),
                     ),
+                  ),
+                  GestureDetector(
+                    behavior: HitTestBehavior.translucent,
+                    onVerticalDragEnd: (details) {
+                      if ((details.primaryVelocity ?? 0) > 700) {
+                        Navigator.of(context).pop();
+                      }
+                    },
+                    child: const SizedBox(height: 8, width: double.infinity),
                   ),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
@@ -1166,9 +1197,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ],
               );
-            },
+                  },
+                ),
               ),
-            ),
+            ],
           ),
         );
       },

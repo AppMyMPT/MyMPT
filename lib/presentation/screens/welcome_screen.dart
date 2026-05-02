@@ -874,22 +874,51 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
   void _showTeacherSelectorBottomSheet() {
     final cs = Theme.of(context).colorScheme;
+    final searchController = TextEditingController();
+    final searchFocusNode = FocusNode();
 
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      isDismissible: true,
+      enableDrag: true,
       backgroundColor: Colors.transparent,
       builder: (BuildContext context) {
-        String searchQuery = '';
+        final mediaQuery = MediaQuery.of(context);
+        final screenHeight = mediaQuery.size.height;
+        final keyboardInset = mediaQuery.viewInsets.bottom;
+        final topSafeMargin = mediaQuery.padding.top + 48.0;
+        final baseSheetHeight = (screenHeight * 0.62).clamp(420.0, 620.0).toDouble();
+        final maxSheetHeight = screenHeight - topSafeMargin;
+        final availableHeight = screenHeight - keyboardInset - topSafeMargin;
+        final sheetHeight = keyboardInset > 0
+            ? baseSheetHeight.clamp(320.0, availableHeight)
+            : baseSheetHeight.clamp(320.0, maxSheetHeight);
 
-        return Container(
-          height: MediaQuery.of(context).size.height * 0.6,
-          decoration: BoxDecoration(
-            color: cs.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: StatefulBuilder(
+        return SizedBox(
+          height: screenHeight,
+          child: Stack(
+            alignment: Alignment.bottomCenter,
+            children: [
+              Positioned.fill(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => Navigator.of(context).pop(),
+                  child: const SizedBox.expand(),
+                ),
+              ),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOut,
+                margin: EdgeInsets.only(bottom: keyboardInset),
+                height: sheetHeight.toDouble(),
+                decoration: BoxDecoration(
+                  color: cs.surface,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                ),
+                child: StatefulBuilder(
             builder: (context, setModalState) {
-              final q = searchQuery.trim().toLowerCase();
+              final q = searchController.text.trim().toLowerCase();
               final filteredTeachers = q.isEmpty
                   ? _teachers
                   : _teachers
@@ -906,6 +935,15 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       color: cs.onSurface.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(2),
                     ),
+                  ),
+                  GestureDetector(
+                    behavior: HitTestBehavior.translucent,
+                    onVerticalDragEnd: (details) {
+                      if ((details.primaryVelocity ?? 0) > 700) {
+                        Navigator.of(context).pop();
+                      }
+                    },
+                    child: const SizedBox(height: 8, width: double.infinity),
                   ),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
@@ -925,9 +963,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                         child: SizedBox(
                           height: 44,
                           child: TextField(
-                            onChanged: (value) {
-                              setModalState(() => searchQuery = value);
+                            controller: searchController,
+                            focusNode: searchFocusNode,
+                            onChanged: (_) {
+                              setModalState(() {});
                             },
+                            onSubmitted: (_) => searchFocusNode.unfocus(),
                             textInputAction: TextInputAction.search,
                             style: TextStyle(color: cs.onSurface),
                             cursorColor: cs.onSurface,
@@ -1000,10 +1041,16 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 ],
               );
             },
+                ),
+              ),
+            ],
           ),
         );
       },
-    );
+    ).whenComplete(() {
+      searchFocusNode.dispose();
+      searchController.dispose();
+    });
   }
 
   void _showSpecialtySelectorBottomSheet() {
