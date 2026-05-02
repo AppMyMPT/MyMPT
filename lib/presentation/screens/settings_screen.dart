@@ -1037,21 +1037,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _showTeacherSelector() {
     final cs = Theme.of(context).colorScheme;
+    final searchController = TextEditingController();
+    final searchFocusNode = FocusNode();
 
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (BuildContext context) {
-        String searchQuery = '';
-        return Container(
-          height: MediaQuery.of(context).size.height * 0.6,
-          decoration: BoxDecoration(
+        final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+        return AnimatedPadding(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+          padding: EdgeInsets.only(bottom: bottomInset),
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height * 0.7,
+            child: Container(
+              decoration: BoxDecoration(
             color: cs.surface,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
-          child: StatefulBuilder(
+              child: StatefulBuilder(
             builder: (context, setModalState) {
-              final q = searchQuery.trim().toLowerCase();
+              final q = searchController.text.trim().toLowerCase();
               final filteredTeachers = q.isEmpty
                   ? _teachers
                   : _teachers.where((t) => t.teacherName.toLowerCase().contains(q)).toList();
@@ -1085,8 +1093,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         child: SizedBox(
                           height: 44,
                           child: TextField(
-                            onChanged: (value) {
-                              setModalState(() => searchQuery = value);
+                            controller: searchController,
+                            focusNode: searchFocusNode,
+                            onChanged: (_) => setModalState(() {}),
+                            onSubmitted: (_) {
+                              setModalState(() {});
+                              searchFocusNode.unfocus();
                             },
                             textInputAction: TextInputAction.search,
                             style: TextStyle(color: cs.onSurface),
@@ -1155,9 +1167,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
               );
             },
+              ),
+            ),
           ),
         );
       },
-    );
+    ).whenComplete(() {
+      searchFocusNode.dispose();
+      searchController.dispose();
+    });
   }
 }
