@@ -17,6 +17,9 @@ class Location extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final normalizedLabel = label.trim();
+    if (normalizedLabel.isEmpty) return const SizedBox.shrink();
+
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final cs = theme.colorScheme;
@@ -26,21 +29,20 @@ class Location extends StatelessWidget {
       0xFFFF8C00,
     ).withValues(alpha: 0.3); // Оранжевый по умолчанию
     Color circleColor = const Color(0xFFFF8C00); // Оранжевый по умолчанию
-    String displayLabel = label;
+    String displayLabel = normalizedLabel;
 
-    if (label == 'Нежинская') {
+    if (normalizedLabel == 'Нежинская') {
       borderColor = const Color(
         0xFF2196F3,
       ).withValues(alpha: 0.3); // Синий для Нежинской
       circleColor = const Color(0xFF2196F3); // Синий для Нежинской
-    } else if (label == 'Нахимовский') {
+    } else if (normalizedLabel == 'Нахимовский') {
       // Серый цвет для Наxимовского корпуса
       borderColor = const Color(
         0xFF9E9E9E,
       ).withValues(alpha: 0.3); // Серый для Наxимовского
       circleColor = const Color(0xFF9E9E9E); // Серый для Наxимовского
-    } else if (label != 'Нахимовский' && label != 'Нежинская') {
-      // Если здание не Наxимовский и не Нежинская, показываем "Дистанционно"
+    } else if (normalizedLabel == 'Дистанционно') {
       displayLabel = 'Дистанционно';
       borderColor = const Color(
         0xFFFF8C00,

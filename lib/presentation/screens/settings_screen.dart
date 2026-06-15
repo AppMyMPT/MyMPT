@@ -862,45 +862,140 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _showAboutDialog() {
     final cs = Theme.of(context).colorScheme;
 
-    showDialog(
+    showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: cs.surface,
-          title: Text('О приложении', style: TextStyle(color: cs.onSurface, fontWeight: FontWeight.bold)),
-          content: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
+        final mediaQuery = MediaQuery.of(context);
+        final bottomPadding = mediaQuery.padding.bottom;
+        final maxSheetHeight = mediaQuery.size.height * 0.64;
+        final sheetHeight = maxSheetHeight < 390
+            ? maxSheetHeight
+            : (mediaQuery.size.height * 0.52).clamp(390.0, maxSheetHeight).toDouble();
+
+        Widget infoTile({
+          required IconData icon,
+          required String title,
+          required String subtitle,
+        }) {
+          return Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: cs.onSurface.withValues(alpha: 0.045),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Row(
               children: [
-                Text(
-                  'Мой МПТ - Мобильное приложение для студентов и преподавателей Московского приборостроительного техникума.',
-                  style: TextStyle(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600),
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: cs.onSurface.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(icon, color: cs.onSurface, size: 20),
                 ),
-                const SizedBox(height: 16),
-                Text('Разработчики:', style: TextStyle(color: cs.onSurface, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                Text('Студенты группы П50-1-22:', style: TextStyle(color: cs.onSurfaceVariant)),
-                const SizedBox(height: 8),
-                Text('• Себежко Александр Андреевич', style: TextStyle(color: cs.onSurfaceVariant)),
-                const SizedBox(height: 8),
-                Text('• Симернин Матвей Александрович', style: TextStyle(color: cs.onSurfaceVariant)),
-                const SizedBox(height: 8),
-                Text('Студент группы СА-2-24:', style: TextStyle(color: cs.onSurfaceVariant)),
-                const SizedBox(height: 8),
-                Text('• Посёлов Иван Павлович', style: TextStyle(color: cs.onSurfaceVariant)),
-                const SizedBox(height: 16),
-                Text('Версия: $_appVersion', style: TextStyle(color: cs.onSurface, fontWeight: FontWeight.bold)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, style: TextStyle(color: cs.onSurface, fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13, height: 1.25),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
+          );
+        }
+
+        return Container(
+          height: sheetHeight,
+          padding: EdgeInsets.fromLTRB(20, 12, 20, 20 + bottomPadding),
+          decoration: BoxDecoration(
+            color: cs.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              style: TextButton.styleFrom(foregroundColor: cs.onSurface),
-              child: Text('Закрыть', style: TextStyle(color: cs.onSurface)),
-            ),
-          ],
+          child: Column(
+            children: [
+              Container(
+                width: 42,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: cs.onSurface.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Container(
+                width: 64,
+                height: 64,
+                clipBehavior: Clip.antiAlias,
+                decoration: BoxDecoration(
+                  color: cs.onSurface.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Image.asset('docs/icons/icon.png', fit: BoxFit.cover),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Мой МПТ',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: cs.onSurface,
+                      fontWeight: FontWeight.w800,
+                    ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Версия $_appVersion',
+                style: TextStyle(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Лицензия: GNU GPL V3',
+                style: TextStyle(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600, fontSize: 13),
+              ),
+              const SizedBox(height: 14),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'Мобильное приложение для студентов и преподавателей Московского приборостроительного техникума.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600, height: 1.35),
+                      ),
+                      const SizedBox(height: 18),
+                      Text(
+                        'Разработчики',
+                        style: TextStyle(color: cs.onSurface, fontSize: 17, fontWeight: FontWeight.w800),
+                      ),
+                      const SizedBox(height: 12),
+                      infoTile(
+                        icon: Icons.groups_outlined,
+                        title: 'Студенты группы П50-1-22',
+                        subtitle: 'Себежко Александр Андреевич\nСимернин Матвей Александрович',
+                      ),
+                      const SizedBox(height: 10),
+                      infoTile(
+                        icon: Icons.person_outline,
+                        title: 'Студент группы СА-2-24',
+                        subtitle: 'Посёлов Иван Павлович',
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         );
       },
     );

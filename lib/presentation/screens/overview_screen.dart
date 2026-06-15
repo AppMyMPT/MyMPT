@@ -472,6 +472,8 @@ class _OverviewScreenState extends State<OverviewScreen> {
     final hasBuildingOverride = changesResult.hasBuildingOverride;
 
     final building = primaryBuilding(scheduleWithChanges);
+    final showLocation = building.trim().isNotEmpty;
+    final isAllDayRemote = isRemoteBuilding(building);
     final dateLabel = formatDate(targetDate);
 
     final canOpen = _canOpenBuilding(building);
@@ -518,22 +520,24 @@ class _OverviewScreenState extends State<OverviewScreen> {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      Flexible(
-                        child: Align(
-                          alignment: Alignment.centerRight,
-                          child: GestureDetector(
-                            behavior: HitTestBehavior.translucent,
-                            onTap: canOpen
-                                ? () => _openBuildingInMaps(context, building)
-                                : null,
-                            child: Location(
-                              label: building,
-                              showOverrideIndicator: hasBuildingOverride,
+                      if (showLocation) ...[
+                        const SizedBox(width: 10),
+                        Flexible(
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.translucent,
+                              onTap: canOpen
+                                  ? () => _openBuildingInMaps(context, building)
+                                  : null,
+                              child: Location(
+                                label: building,
+                                showOverrideIndicator: hasBuildingOverride,
+                              ),
                             ),
                           ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                 ),
@@ -599,6 +603,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
                             endTime: lessonEndTime,
                             accentColor: lessonAccent,
                             comment: item.comment,
+                            isRemote: !isAllDayRemote && item.comment.trim() == 'Дистанционно',
                           );
                           if (_isStudent) {
                             card = Material(
@@ -673,6 +678,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
                               replaceTo: change.replaceTo,
                               group: change.group,
                               teacherView: !_isStudent,
+                              isRemote: !isAllDayRemote && isRemoteReplacement(change),
                             ),
                           );
                         }),
@@ -773,10 +779,12 @@ class _OverviewScreenState extends State<OverviewScreen> {
         continue;
       }
 
-      final parsedDetails = parseLessonDetails(normalizedReplaceTo);
+      final isRemoteChange = isRemoteReplacement(change);
+      final displayReplaceTo = stripRemoteMarker(normalizedReplaceTo);
+      final parsedDetails = parseLessonDetails(displayReplaceTo);
       final subject = parsedDetails.subject.isNotEmpty
           ? parsedDetails.subject
-          : normalizedReplaceTo;
+          : displayReplaceTo;
       final teacher = parsedDetails.teacher;
 
       final updatedBuilding = resolveBuildingFromChange(
@@ -806,7 +814,9 @@ class _OverviewScreenState extends State<OverviewScreen> {
               ? updatedBuilding
               : existing.building,
           lessonType: existing.lessonType,
-          comment: existing.comment,
+          comment: _mergeComments(existing.comment, [
+            if (isRemoteChange) 'Дистанционно',
+          ]),
         );
       } else {
         final timing = lessonTimingForNumber(lessonNumber, callsData);
@@ -821,8 +831,9 @@ class _OverviewScreenState extends State<OverviewScreen> {
             endTime: timing.end,
             building: updatedBuilding.isNotEmpty
                 ? updatedBuilding
-                : 'Дистанционно',
+                : '',
             lessonType: null,
+            comment: isRemoteChange ? 'Дистанционно' : '',
           ),
         );
       }
@@ -851,9 +862,30 @@ class _OverviewScreenState extends State<OverviewScreen> {
 
   String resolveBuildingFromChange(String replaceTo, String fallbackBuilding) {
     final upper = replaceTo.toUpperCase();
+    if (isRemoteText(upper)) return 'Дистанционно';
     if (upper.contains('НЕЖИНСК')) return 'Нежинская';
     if (upper.contains('НАХИМОВ')) return 'Нахимовский';
     return fallbackBuilding;
+  }
+
+  bool isRemoteReplacement(Replacement change) {
+    return isRemoteText('${change.replaceFrom} ${change.replaceTo}');
+  }
+
+  bool isRemoteText(String value) {
+    final upper = value.toUpperCase().replaceAll('Ё', 'Е');
+    return upper.contains('ДИСТАН');
+  }
+
+  bool isRemoteBuilding(String building) {
+    return isRemoteText(building);
+  }
+
+  String stripRemoteMarker(String value) {
+    return value
+        .replaceAll(RegExp(r'\s*\((?:ДИСТАНЦИОННО|ДИСТАНТ|ДИСТАН)\)\s*', caseSensitive: false), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
   }
 
   LessonTiming lessonTimingForNumber(String lessonNumber, List callsData) {
@@ -876,12 +908,19 @@ class _OverviewScreenState extends State<OverviewScreen> {
 
   String primaryBuilding(List<Schedule> schedule) {
     if (schedule.isEmpty) return '';
-    final Map<String, int> counts = {};
-    for (final lesson in schedule) {
-      counts[lesson.building] = (counts[lesson.building] ?? 0) + 1;
+    if (schedule.every((lesson) => isRemoteBuilding(lesson.building))) {
+      return 'Дистанционно';
     }
 
-    String primary = schedule.first.building;
+    final Map<String, int> counts = {};
+    for (final lesson in schedule) {
+      final building = lesson.building.trim();
+      if (building.isEmpty || isRemoteBuilding(building)) continue;
+      counts[building] = (counts[building] ?? 0) + 1;
+    }
+    if (counts.isEmpty) return '';
+
+    String primary = '';
     int maxCount = 0;
 
     counts.forEach((b, c) {

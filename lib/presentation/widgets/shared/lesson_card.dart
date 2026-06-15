@@ -26,6 +26,9 @@ class LessonCard extends StatelessWidget {
   /// Дополнительный комментарий к занятию
   final String comment;
 
+  /// Показывать пометку о дистанционном формате пары
+  final bool isRemote;
+
   const LessonCard({
     super.key,
     required this.number,
@@ -35,6 +38,7 @@ class LessonCard extends StatelessWidget {
     required this.endTime,
     required this.accentColor,
     this.comment = '',
+    this.isRemote = false,
   });
 
   @override
@@ -55,6 +59,7 @@ class LessonCard extends StatelessWidget {
     final subColor = isDark
         ? Colors.white.withValues(alpha: 0.7)
         : Colors.black54;
+    final visibleComment = comment.trim() == 'Дистанционно' ? '' : comment.trim();
 
     return Container(
       decoration: BoxDecoration(
@@ -93,15 +98,23 @@ class LessonCard extends StatelessWidget {
                     teacher,
                     style: TextStyle(fontSize: 12, color: subColor),
                   ),
-                  if (comment.trim().isNotEmpty) ...[
+                  if (isRemote || visibleComment.isNotEmpty) ...[
                     const SizedBox(height: 2),
-                    Text(
-                      comment.trim(),
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: subColor,
-                      ),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      children: [
+                        if (isRemote) const _RemoteBadge(),
+                        if (visibleComment.isNotEmpty)
+                          Text(
+                            visibleComment,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: subColor,
+                            ),
+                          ),
+                      ],
                     ),
                   ],
                 ],
@@ -124,6 +137,33 @@ class LessonCard extends StatelessWidget {
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RemoteBadge extends StatelessWidget {
+  const _RemoteBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = const Color(0xFFFF8C00).withValues(alpha: isDark ? 0.18 : 0.12);
+    final fg = const Color(0xFFFF8C00);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        'Дистанционно',
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: fg,
         ),
       ),
     );

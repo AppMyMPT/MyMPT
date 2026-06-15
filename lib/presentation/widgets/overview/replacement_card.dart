@@ -22,6 +22,9 @@ class ReplacementCard extends StatelessWidget {
   /// Вид карточки для преподавателя: без ФИО преподавателя и старой пары.
   final bool teacherView;
 
+  /// Показывать пометку о дистанционном формате замены.
+  final bool isRemote;
+
   const ReplacementCard({
     super.key,
     required this.lessonNumber,
@@ -29,6 +32,7 @@ class ReplacementCard extends StatelessWidget {
     required this.replaceTo,
     this.group = '',
     this.teacherView = false,
+    this.isRemote = false,
   });
 
   @override
@@ -39,7 +43,9 @@ class ReplacementCard extends StatelessWidget {
 
     final sanitizedReplaceFrom = (replaceFrom == '\u00A0' ? '' : replaceFrom)
         .trim();
-    final sanitizedReplaceTo = replaceTo.replaceAll('\u00A0', ' ').trim();
+    final sanitizedReplaceTo = _stripRemoteMarker(
+      replaceTo.replaceAll('\u00A0', ' ').trim(),
+    );
     final LessonDetails newLessonDetails = parseLessonDetails(
       sanitizedReplaceTo,
     );
@@ -120,15 +126,24 @@ class ReplacementCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      if (subtitleText.isNotEmpty)
-                        Text(
-                          subtitleText,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: isAdditionalClass
-                                ? subColor.withValues(alpha: 0.7)
-                                : subColor,
-                          ),
+                      if (isRemote || subtitleText.isNotEmpty)
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 4,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            if (subtitleText.isNotEmpty)
+                              Text(
+                                subtitleText,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isAdditionalClass
+                                      ? subColor.withValues(alpha: 0.7)
+                                      : subColor,
+                                ),
+                              ),
+                            if (isRemote) const _RemoteBadge(),
+                          ],
                         ),
                     ],
                   ),
@@ -208,6 +223,40 @@ class ReplacementCard extends StatelessWidget {
     return value
         .replaceAll(RegExp(r'^\s*группа\s*[:\-]?\s*', caseSensitive: false), '')
         .trim();
+  }
+
+  String _stripRemoteMarker(String value) {
+    return value
+        .replaceAll(RegExp(r'\s*\((?:ДИСТАНЦИОННО|ДИСТАНТ|ДИСТАН)\)\s*', caseSensitive: false), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+  }
+}
+
+class _RemoteBadge extends StatelessWidget {
+  const _RemoteBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = const Color(0xFFFF8C00).withValues(alpha: isDark ? 0.18 : 0.12);
+    final fg = const Color(0xFFFF8C00);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        'Дистанционно',
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: fg,
+        ),
+      ),
+    );
   }
 }
 
