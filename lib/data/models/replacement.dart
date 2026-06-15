@@ -18,6 +18,9 @@ class Replacement {
   /// Дата применения изменения
   final String changeDate;
 
+  /// Группа, к которой относится изменение
+  final String group;
+
   /// Конструктор замены в расписании
   ///
   /// Параметры:
@@ -26,17 +29,19 @@ class Replacement {
   /// - [replaceTo]: Новый предмет (обязательный)
   /// - [updatedAt]: Время добавления изменения (обязательный)
   /// - [changeDate]: Дата применения изменения (обязательный)
+  /// - [group]: Группа
   Replacement({
     required this.lessonNumber,
     required this.replaceFrom,
     required this.replaceTo,
     required this.updatedAt,
     required this.changeDate,
+    this.group = '',
   });
 
   @override
   String toString() {
-    return 'ReplacementModel(lessonNumber: $lessonNumber, replaceFrom: $replaceFrom, replaceTo: $replaceTo, updatedAt: $updatedAt, changeDate: $changeDate)';
+    return 'ReplacementModel(lessonNumber: $lessonNumber, replaceFrom: $replaceFrom, replaceTo: $replaceTo, updatedAt: $updatedAt, changeDate: $changeDate, group: $group)';
   }
 
   /// Преобразует объект изменения в JSON
@@ -50,6 +55,7 @@ class Replacement {
       'replaceTo': replaceTo,
       'updatedAt': updatedAt,
       'changeDate': changeDate,
+      'group': group,
     };
   }
 }

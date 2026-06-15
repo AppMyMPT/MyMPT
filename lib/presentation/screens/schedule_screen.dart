@@ -53,7 +53,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
   void _onLessonTap(Schedule lesson, {String? startTime, String? endTime}) {
     if (lesson.teacher.trim().isEmpty) return;
-    
+
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
       HapticFeedback.lightImpact();
     }
@@ -66,7 +66,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       onViewTeacherSchedule: () {
         Navigator.of(context).push(
           MaterialPageRoute<void>(
-            builder: (context) => TeacherScheduleScreen(teacherName: lesson.teacher),
+            builder: (context) =>
+                TeacherScheduleScreen(teacherName: lesson.teacher),
           ),
         );
       },
@@ -74,12 +75,24 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   }
 
   Future _initializeSchedule() async {
-    await _loadScheduleData(forceRefresh: false, showLoader: true, userInitiated: false);
-    await _loadScheduleData(forceRefresh: true, showLoader: false, userInitiated: false);
+    await _loadScheduleData(
+      forceRefresh: false,
+      showLoader: true,
+      userInitiated: false,
+    );
+    await _loadScheduleData(
+      forceRefresh: true,
+      showLoader: false,
+      userInitiated: false,
+    );
   }
 
   void _onDataUpdated() {
-    _loadScheduleData(forceRefresh: false, showLoader: false, userInitiated: false);
+    _loadScheduleData(
+      forceRefresh: false,
+      showLoader: false,
+      userInitiated: false,
+    );
   }
 
   void _showOfflineBanner({required bool userInitiated}) {
@@ -160,7 +173,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
       setState(() {
         _weeklySchedule = weekly;
-        _isOffline = refreshOk == null ? _repository.isOfflineBadgeVisible : !refreshOk;
+        _isOffline = refreshOk == null
+            ? _repository.isOfflineBadgeVisible
+            : !refreshOk;
         if (showLoader) _isLoading = false;
       });
 
@@ -200,7 +215,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
     final bg = Theme.of(context).scaffoldBackgroundColor;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     final progressColor = isDark ? Colors.white : Colors.grey;
 
     const headerMaxHeight = 176.0;
@@ -212,27 +227,36 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           ? SafeArea(
               top: false,
               bottom: false,
-              child: Center(child: CircularProgressIndicator(color: progressColor)),
+              child: Center(
+                child: CircularProgressIndicator(color: progressColor),
+              ),
             )
           : RefreshIndicator(
               onRefresh: () async {
                 if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
                   HapticFeedback.lightImpact();
                 }
-                await _loadScheduleData(forceRefresh: true, userInitiated: true);
+                await _loadScheduleData(
+                  forceRefresh: true,
+                  userInitiated: true,
+                );
               },
               color: progressColor,
               displacement: 40.0,
               edgeOffset: 0,
               child: CustomScrollView(
-                physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                physics: const BouncingScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics(),
+                ),
                 slivers: [
                   SliverPersistentHeader(
                     pinned: true,
                     delegate: _HeightPinnedHeaderDelegate(
                       backgroundColor: bg,
-                      maxHeight: headerMaxHeight + MediaQuery.of(context).padding.top,
-                      minHeight: headerMinHeight + MediaQuery.of(context).padding.top,
+                      maxHeight:
+                          headerMaxHeight + MediaQuery.of(context).padding.top,
+                      minHeight:
+                          headerMinHeight + MediaQuery.of(context).padding.top,
                       paddingTop: MediaQuery.of(context).padding.top,
                       child: _CollapsibleWeekHeader(
                         maxHeight: headerMaxHeight,
@@ -249,22 +273,20 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   SliverPadding(
                     padding: const EdgeInsets.fromLTRB(0, 24, 0, 110),
                     sliver: SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          final day = days[index];
-                          final building = _primaryBuilding(day.value);
+                      delegate: SliverChildBuilderDelegate((context, index) {
+                        final day = days[index];
+                        final building = _primaryBuilding(day.value);
 
-                          return DaySection(
-                            title: day.key,
-                            building: building,
-                            lessons: day.value,
-                            accentColor: _lessonAccent,
-                            weekType: weekType,
-                            onLessonTap: _isStudent ? _onLessonTap : null,
-                          );
-                        },
-                        childCount: days.length,
-                      ),
+                        return DaySection(
+                          title: day.key,
+                          building: building,
+                          lessons: day.value,
+                          accentColor: _lessonAccent,
+                          weekType: weekType,
+                          onLessonTap: _isStudent ? _onLessonTap : null,
+                          showGroupInsteadOfTeacher: !_isStudent,
+                        );
+                      }, childCount: days.length),
                     ),
                   ),
                 ],
@@ -324,7 +346,8 @@ class _HeightPinnedHeaderDelegate extends SliverPersistentHeaderDelegate {
 
   // We add this to make the header pull down along with the physics
   @override
-  OverScrollHeaderStretchConfiguration? get stretchConfiguration => OverScrollHeaderStretchConfiguration();
+  OverScrollHeaderStretchConfiguration? get stretchConfiguration =>
+      OverScrollHeaderStretchConfiguration();
 
   @override
   bool shouldRebuild(covariant _HeightPinnedHeaderDelegate old) {
@@ -336,32 +359,46 @@ class _HeightPinnedHeaderDelegate extends SliverPersistentHeaderDelegate {
   }
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
     // If shrinkOffset is negative (pulling down), we don't calculate progress based on it
     // We just keep the header fully expanded. The physics engine will move the whole sliver down.
     final actualShrinkOffset = shrinkOffset < 0 ? 0.0 : shrinkOffset;
-    final range = (maxHeight - minHeight).abs() < 1 ? 1.0 : (maxHeight - minHeight);
+    final range = (maxHeight - minHeight).abs() < 1
+        ? 1.0
+        : (maxHeight - minHeight);
     final t = (actualShrinkOffset / range).clamp(0.0, 1.0);
 
     final isIOS = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
     final blurStrength = isIOS ? 12.0 : 20.0;
     final blurSigma = lerpDouble(0, blurStrength, Curves.easeOut.transform(t))!;
     final baseAlpha = backgroundColor.a;
-    final overlayAlpha = lerpDouble(baseAlpha, baseAlpha * 0.4, Curves.easeOut.transform(t))!;
-    
-    final extraBlurPadding = isIOS ? 12.0 : 20.0; // Keep iOS blur area smaller for smoother scrolling. 
+    final overlayAlpha = lerpDouble(
+      baseAlpha,
+      baseAlpha * 0.4,
+      Curves.easeOut.transform(t),
+    )!;
+
+    final extraBlurPadding = isIOS
+        ? 12.0
+        : 20.0; // Keep iOS blur area smaller for smoother scrolling.
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final currentHeight = constraints.maxHeight;
         // Calculate overscroll amount (how far down it's pulled past maxExtent)
-        final overscroll = currentHeight > maxHeight ? currentHeight - maxHeight : 0.0;
+        final overscroll = currentHeight > maxHeight
+            ? currentHeight - maxHeight
+            : 0.0;
 
         return Stack(
           fit: StackFit.expand,
           clipBehavior: Clip.none,
           children: [
-            // Shift the entire header down visually by 'overscroll', 
+            // Shift the entire header down visually by 'overscroll',
             // maintaining its original max size so it doesn't stretch out of proportion like a rubber band.
             // This mimics the exact behavior of the generic header in OverviewScreen.
             Positioned(
@@ -372,25 +409,39 @@ class _HeightPinnedHeaderDelegate extends SliverPersistentHeaderDelegate {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  if (t == 0.0)
-                    ColoredBox(color: backgroundColor),
+                  if (t == 0.0) ColoredBox(color: backgroundColor),
 
                   if (t > 0.0)
                     Positioned(
                       top: 0,
                       left: 0,
                       right: 0,
-                      height: paddingTop + lerpDouble(16, 8 + extraBlurPadding, Curves.easeOutCubic.transform(t))!,
+                      height:
+                          paddingTop +
+                          lerpDouble(
+                            16,
+                            8 + extraBlurPadding,
+                            Curves.easeOutCubic.transform(t),
+                          )!,
                       child: blurSigma > 0.15
                           ? ClipRect(
                               child: BackdropFilter(
-                                filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
+                                filter: ImageFilter.blur(
+                                  sigmaX: blurSigma,
+                                  sigmaY: blurSigma,
+                                ),
                                 child: ColoredBox(
-                                  color: backgroundColor.withAlpha((overlayAlpha * 255).toInt()),
+                                  color: backgroundColor.withAlpha(
+                                    (overlayAlpha * 255).toInt(),
+                                  ),
                                 ),
                               ),
                             )
-                          : ColoredBox(color: backgroundColor.withAlpha((overlayAlpha * 255).toInt())),
+                          : ColoredBox(
+                              color: backgroundColor.withAlpha(
+                                (overlayAlpha * 255).toInt(),
+                              ),
+                            ),
                     ),
 
                   Padding(
@@ -433,7 +484,7 @@ class _CollapsibleWeekHeader extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final titleColor = isDark ? Colors.white : Colors.black87;
     final subColor = isDark ? Colors.white70 : Colors.black54;
-    
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final h = constraints.maxHeight.clamp(minHeight, maxHeight);
@@ -470,7 +521,12 @@ class _CollapsibleWeekHeader extends StatelessWidget {
         final displayTitle = isCompact ? weekType : title;
 
         return Container(
-          margin: EdgeInsets.fromLTRB(16, lerpDouble(16, 8, tCurved)!, 16, lerpDouble(0, 8, tCurved)!),
+          margin: EdgeInsets.fromLTRB(
+            16,
+            lerpDouble(16, 8, tCurved)!,
+            16,
+            lerpDouble(0, 8, tCurved)!,
+          ),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(radius),
             gradient: LinearGradient(
@@ -480,7 +536,13 @@ class _CollapsibleWeekHeader extends StatelessWidget {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: lerpDouble(isDark ? 0.3 : 0.1, isDark ? 0.1 : 0.05, tCurved)!),
+                color: Colors.black.withValues(
+                  alpha: lerpDouble(
+                    isDark ? 0.3 : 0.1,
+                    isDark ? 0.1 : 0.05,
+                    tCurved,
+                  )!,
+                ),
                 blurRadius: lerpDouble(15, 6, tCurved)!,
                 offset: Offset(0, lerpDouble(8, 2, tCurved)!),
               ),
@@ -516,53 +578,49 @@ class _CollapsibleWeekHeader extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: dateSize,
-                            color: subColor,
-                          ),
+                          style: TextStyle(fontSize: dateSize, color: subColor),
                         ),
                       ],
                     ),
                   )
-                else
-                  ...[
-                    Align(
-                      alignment: Alignment.topLeft,
-                      child: pill,
-                    ),
-                    Align(
-                      alignment: const Alignment(-1.0, -0.35),
-                      child: Padding(
-                        padding: EdgeInsets.only(right: iconSize + 12, top: reservedTop),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              displayTitle,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: titleSize,
-                                fontWeight: FontWeight.w700,
-                                color: titleColor,
-                              ),
+                else ...[
+                  Align(alignment: Alignment.topLeft, child: pill),
+                  Align(
+                    alignment: const Alignment(-1.0, -0.35),
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        right: iconSize + 12,
+                        top: reservedTop,
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            displayTitle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: titleSize,
+                              fontWeight: FontWeight.w700,
+                              color: titleColor,
                             ),
-                            SizedBox(height: gapTitleDate),
-                            Text(
-                              dateLabel,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: dateSize,
-                                color: subColor,
-                              ),
+                          ),
+                          SizedBox(height: gapTitleDate),
+                          Text(
+                            dateLabel,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: dateSize,
+                              color: subColor,
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
+                  ),
+                ],
                 Align(
                   alignment: const Alignment(1.0, 0.0),
                   child: SizedBox(
@@ -605,8 +663,12 @@ class _WeekTypePill extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isIOS = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 
-    final bg = isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.06);
-    final border = isDark ? Colors.white.withValues(alpha: 0.12) : Colors.black.withValues(alpha: 0.08);
+    final bg = isDark
+        ? Colors.white.withValues(alpha: 0.08)
+        : Colors.black.withValues(alpha: 0.06);
+    final border = isDark
+        ? Colors.white.withValues(alpha: 0.12)
+        : Colors.black.withValues(alpha: 0.08);
     final fg = isDark ? Colors.white : Colors.black87;
 
     final radius = BorderRadius.circular(14);

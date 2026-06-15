@@ -24,7 +24,11 @@ class NumeratorDenominatorCard extends StatelessWidget {
 
   /// При нажатии на пару (для студента). Если null, карточка не кликабельна.
   /// [startTime] и [endTime] — время с карточки для отображения в окне детали.
-  final void Function(Schedule lesson, {String? startTime, String? endTime})? onLessonTap;
+  final void Function(Schedule lesson, {String? startTime, String? endTime})?
+  onLessonTap;
+
+  /// Показывать группу вместо преподавателя во второй строке карточки.
+  final bool showGroupInsteadOfTeacher;
 
   const NumeratorDenominatorCard({
     super.key,
@@ -34,6 +38,7 @@ class NumeratorDenominatorCard extends StatelessWidget {
     required this.startTime,
     required this.endTime,
     this.onLessonTap,
+    this.showGroupInsteadOfTeacher = false,
   });
 
   @override
@@ -41,13 +46,19 @@ class NumeratorDenominatorCard extends StatelessWidget {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
-    
+
     final bg = cs.surface;
-    final borderColor = isDark ? const Color(0xFF333333) : Colors.black.withValues(alpha: 0.06);
-    final shadowColor = isDark ? Colors.black.withValues(alpha: 0.5) : Colors.black.withValues(alpha: 0.04);
-    
+    final borderColor = isDark
+        ? const Color(0xFF333333)
+        : Colors.black.withValues(alpha: 0.06);
+    final shadowColor = isDark
+        ? Colors.black.withValues(alpha: 0.5)
+        : Colors.black.withValues(alpha: 0.04);
+
     final titleColor = isDark ? Colors.white : Colors.black87;
-    final subColor = isDark ? Colors.white.withValues(alpha: 0.7) : Colors.black54;
+    final subColor = isDark
+        ? Colors.white.withValues(alpha: 0.7)
+        : Colors.black54;
 
     final isIOS = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 
@@ -78,6 +89,7 @@ class NumeratorDenominatorCard extends StatelessWidget {
                             singleLineSubject: isIOS,
                             titleColor: titleColor,
                             subColor: subColor,
+                            subtitle: _subtitleFor(numeratorLesson!),
                           ),
                           numeratorLesson!,
                         )
@@ -101,6 +113,7 @@ class NumeratorDenominatorCard extends StatelessWidget {
                             singleLineSubject: isIOS,
                             titleColor: titleColor,
                             subColor: subColor,
+                            subtitle: _subtitleFor(denominatorLesson!),
                           ),
                           denominatorLesson!,
                         )
@@ -128,13 +141,7 @@ class NumeratorDenominatorCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  endTime,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: subColor,
-                  ),
-                ),
+                Text(endTime, style: TextStyle(fontSize: 12, color: subColor)),
               ],
             ),
           ),
@@ -169,7 +176,8 @@ class NumeratorDenominatorCard extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => onLessonTap!(lesson, startTime: startTime, endTime: endTime),
+        onTap: () =>
+            onLessonTap!(lesson, startTime: startTime, endTime: endTime),
         borderRadius: BorderRadius.circular(8),
         child: child,
       ),
@@ -190,6 +198,7 @@ class NumeratorDenominatorCard extends StatelessWidget {
     required bool singleLineSubject,
     required Color titleColor,
     required Color subColor,
+    required String subtitle,
   }) {
     final color = isNumerator
         ? const Color(0xFFFF8C00) // Оранжевый для числителя
@@ -224,11 +233,8 @@ class NumeratorDenominatorCard extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                lesson.teacher,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: subColor,
-                ),
+                subtitle,
+                style: TextStyle(fontSize: 12, color: subColor),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -237,6 +243,13 @@ class NumeratorDenominatorCard extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  String _subtitleFor(Schedule lesson) {
+    if (showGroupInsteadOfTeacher && lesson.group.isNotEmpty) {
+      return lesson.group;
+    }
+    return lesson.teacher;
   }
 
   /// Создает виджет для отображения пустого урока

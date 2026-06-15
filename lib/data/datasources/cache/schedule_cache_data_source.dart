@@ -202,10 +202,12 @@ class ScheduleCacheDataSource {
       'number': schedule.number,
       'subject': schedule.subject,
       'teacher': schedule.teacher,
+      'group': schedule.group,
       'startTime': schedule.startTime,
       'endTime': schedule.endTime,
       'building': schedule.building,
       'lessonType': schedule.lessonType,
+      'comment': schedule.comment,
     };
   }
 
@@ -222,13 +224,12 @@ class ScheduleCacheDataSource {
       number: json['number'] as String? ?? '',
       subject: json['subject'] as String? ?? '',
       teacher: json['teacher'] as String? ?? '',
+      group: json['group'] as String? ?? '',
       startTime: json['startTime'] as String? ?? '',
       endTime: json['endTime'] as String? ?? '',
       building: json['building'] as String? ?? '',
       lessonType: json['lessonType'] as String?,
+      comment: json['comment'] as String? ?? '',
     );
   }
 }
-
-
-

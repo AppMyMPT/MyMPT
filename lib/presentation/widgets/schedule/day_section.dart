@@ -30,7 +30,11 @@ class DaySection extends StatelessWidget {
 
   /// При нажатии на пару (только для студента). Если null, пары не кликабельны.
   /// [startTime] и [endTime] — время с карточки (для отображения в окне детали).
-  final void Function(Schedule lesson, {String? startTime, String? endTime})? onLessonTap;
+  final void Function(Schedule lesson, {String? startTime, String? endTime})?
+  onLessonTap;
+
+  /// Показывать группу вместо преподавателя во второй строке карточки.
+  final bool showGroupInsteadOfTeacher;
 
   const DaySection({
     super.key,
@@ -40,6 +44,7 @@ class DaySection extends StatelessWidget {
     required this.accentColor,
     this.weekType,
     this.onLessonTap,
+    this.showGroupInsteadOfTeacher = false,
   });
 
   static const Map<String, String> _buildingToAddress = {
@@ -71,9 +76,9 @@ class DaySection extends StatelessWidget {
 
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!ok && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Не удалось открыть карты')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Не удалось открыть карты')));
     }
   }
 
@@ -98,7 +103,8 @@ class DaySection extends StatelessWidget {
   List<Widget> _buildLessonWidgets(
     List<Schedule> lessons,
     List callsData, {
-    void Function(Schedule lesson, {String? startTime, String? endTime})? onLessonTap,
+    void Function(Schedule lesson, {String? startTime, String? endTime})?
+    onLessonTap,
   }) {
     final List<Widget> widgets = [];
 
@@ -119,16 +125,21 @@ class DaySection extends StatelessWidget {
       String endTime = '';
       try {
         final periodInt = int.tryParse(period);
-        if (periodInt != null && periodInt > 0 && periodInt <= callsData.length) {
+        if (periodInt != null &&
+            periodInt > 0 &&
+            periodInt <= callsData.length) {
           final call = callsData[periodInt - 1];
           startTime = call.startTime;
           endTime = call.endTime;
         }
       } catch (_) {}
 
-      final hasTypedLessons = periodLessons.any((lesson) => lesson.lessonType != null);
+      final hasTypedLessons = periodLessons.any(
+        (lesson) => lesson.lessonType != null,
+      );
+      final hasDuplicateTypedLessons = _hasDuplicateTypedLessons(periodLessons);
 
-      if (hasTypedLessons) {
+      if (hasTypedLessons && !hasDuplicateTypedLessons) {
         Schedule? numeratorLesson;
         Schedule? denominatorLesson;
 
@@ -148,24 +159,33 @@ class DaySection extends StatelessWidget {
             startTime: startTime,
             endTime: endTime,
             onLessonTap: onLessonTap,
+            showGroupInsteadOfTeacher: showGroupInsteadOfTeacher,
           ),
         );
       } else {
         for (int j = 0; j < periodLessons.length; j++) {
           final lesson = periodLessons[j];
+          final subtitle = showGroupInsteadOfTeacher && lesson.group.isNotEmpty
+              ? lesson.group
+              : lesson.teacher;
           Widget card = LessonCard(
             number: lesson.number,
             subject: lesson.subject,
-            teacher: lesson.teacher,
+            teacher: subtitle,
             startTime: startTime,
             endTime: endTime,
             accentColor: accentColor,
           );
           if (onLessonTap != null) {
+            final handleLessonTap = onLessonTap;
             card = Material(
               color: Colors.transparent,
               child: InkWell(
-                onTap: () => onLessonTap!(lesson, startTime: startTime, endTime: endTime),
+                onTap: () => handleLessonTap(
+                  lesson,
+                  startTime: startTime,
+                  endTime: endTime,
+                ),
                 borderRadius: BorderRadius.circular(16),
                 child: card,
               ),
@@ -183,18 +203,32 @@ class DaySection extends StatelessWidget {
         String nextLessonStartTime = '';
         try {
           final nextPeriodInt = int.tryParse(sortedPeriods[i + 1]);
-          if (nextPeriodInt != null && nextPeriodInt > 0 && nextPeriodInt <= callsData.length) {
+          if (nextPeriodInt != null &&
+              nextPeriodInt > 0 &&
+              nextPeriodInt <= callsData.length) {
             final nextCall = callsData[nextPeriodInt - 1];
             nextLessonStartTime = nextCall.startTime;
           }
         } catch (_) {}
 
-        widgets.add(BreakIndicator(startTime: endTime, endTime: nextLessonStartTime));
+        widgets.add(
+          BreakIndicator(startTime: endTime, endTime: nextLessonStartTime),
+        );
         widgets.add(const SizedBox(height: 14));
       }
     }
 
     return widgets;
+  }
+
+  bool _hasDuplicateTypedLessons(List<Schedule> lessons) {
+    var numeratorCount = 0;
+    var denominatorCount = 0;
+    for (final lesson in lessons) {
+      if (lesson.lessonType == 'numerator') numeratorCount++;
+      if (lesson.lessonType == 'denominator') denominatorCount++;
+    }
+    return numeratorCount > 1 || denominatorCount > 1;
   }
 
   @override
@@ -229,7 +263,9 @@ class DaySection extends StatelessWidget {
                   alignment: Alignment.centerRight,
                   child: GestureDetector(
                     behavior: HitTestBehavior.translucent,
-                    onTap: canOpen ? () => _openBuildingInMaps(context, building) : null,
+                    onTap: canOpen
+                        ? () => _openBuildingInMaps(context, building)
+                        : null,
                     child: Location(label: building),
                   ),
                 ),
@@ -237,7 +273,13 @@ class DaySection extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 20),
-          Column(children: _buildLessonWidgets(lessons, callsData, onLessonTap: onLessonTap)),
+          Column(
+            children: _buildLessonWidgets(
+              lessons,
+              callsData,
+              onLessonTap: onLessonTap,
+            ),
+          ),
           const SizedBox(height: 12),
           Divider(color: cs.outlineVariant.withValues(alpha: 0.18), height: 32),
         ],

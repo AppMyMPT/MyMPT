@@ -23,6 +23,9 @@ class LessonCard extends StatelessWidget {
   /// Акцентный цвет для номера пары
   final Color accentColor;
 
+  /// Дополнительный комментарий к занятию
+  final String comment;
+
   const LessonCard({
     super.key,
     required this.number,
@@ -31,6 +34,7 @@ class LessonCard extends StatelessWidget {
     required this.startTime,
     required this.endTime,
     required this.accentColor,
+    this.comment = '',
   });
 
   @override
@@ -40,11 +44,17 @@ class LessonCard extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     final bg = cs.surface;
-    final borderColor = isDark ? const Color(0xFF333333) : Colors.black.withValues(alpha: 0.06);
-    final shadowColor = isDark ? Colors.black.withValues(alpha: 0.5) : Colors.black.withValues(alpha: 0.04);
-    
+    final borderColor = isDark
+        ? const Color(0xFF333333)
+        : Colors.black.withValues(alpha: 0.06);
+    final shadowColor = isDark
+        ? Colors.black.withValues(alpha: 0.5)
+        : Colors.black.withValues(alpha: 0.04);
+
     final titleColor = isDark ? Colors.white : Colors.black87;
-    final subColor = isDark ? Colors.white.withValues(alpha: 0.7) : Colors.black54;
+    final subColor = isDark
+        ? Colors.white.withValues(alpha: 0.7)
+        : Colors.black54;
 
     return Container(
       decoration: BoxDecoration(
@@ -81,11 +91,19 @@ class LessonCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     teacher,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: subColor,
-                    ),
+                    style: TextStyle(fontSize: 12, color: subColor),
                   ),
+                  if (comment.trim().isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      comment.trim(),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: subColor,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -102,13 +120,7 @@ class LessonCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  endTime,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: subColor,
-                  ),
-                ),
+                Text(endTime, style: TextStyle(fontSize: 12, color: subColor)),
               ],
             ),
           ],

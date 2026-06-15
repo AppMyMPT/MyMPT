@@ -86,6 +86,52 @@ class ReplacementRemoteDatasource {
     }
   }
 
+  /// Парсит замены в расписании для конкретного преподавателя.
+  Future<List<Replacement>> parseScheduleChangesForTeacher(
+    String teacherName, {
+    bool forceRefresh = false,
+  }) async {
+    try {
+      final cacheScope = 'teacher_${teacherName.trim().toLowerCase()}';
+      if (!forceRefresh) {
+        final cachedChanges = await _getCachedChanges(cacheScope);
+        if (cachedChanges != null) {
+          return cachedChanges;
+        }
+      }
+
+      final response = await http
+          .get(Uri.parse(baseUrl))
+          .timeout(
+            const Duration(seconds: 15),
+            onTimeout: () {
+              throw Exception(
+                'Превышено время ожидания ответа от сервера (15 секунд)',
+              );
+            },
+          );
+
+      if (response.statusCode == 200) {
+        final document = parser.parse(response.body);
+        final changes = _replacementParser.parseScheduleChangesForTeacher(
+          document,
+          teacherName,
+        );
+
+        await _saveCachedChanges(cacheScope, changes);
+        return changes;
+      } else {
+        throw Exception(
+          'Не удалось загрузить страницу: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      throw Exception(
+        'Ошибка при парсинге изменений для преподавателя $teacherName: $e',
+      );
+    }
+  }
+
   /// Получает кэшированные замены из хранилища
   Future<List<Replacement>?> _getCachedChanges(String groupCode) async {
     try {
@@ -112,6 +158,7 @@ class ReplacementRemoteDatasource {
                   replaceTo: json['replaceTo'] as String,
                   updatedAt: json['updatedAt'] as String,
                   changeDate: json['changeDate'] as String,
+                  group: json['group'] as String? ?? '',
                 ),
               )
               .toList();

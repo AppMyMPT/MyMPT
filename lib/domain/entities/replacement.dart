@@ -18,6 +18,9 @@ class Replacement {
   /// Дата применения замены
   final String changeDate;
 
+  /// Группа, к которой относится замена
+  final String group;
+
   /// Конструктор замены в расписании
   ///
   /// Параметры:
@@ -26,12 +29,14 @@ class Replacement {
   /// - [replaceTo]: Новый предмет (обязательный)
   /// - [updatedAt]: Время добавления замены (обязательный)
   /// - [changeDate]: Дата применения замены (обязательный)
+  /// - [group]: Группа
   Replacement({
     required this.lessonNumber,
     required this.replaceFrom,
     required this.replaceTo,
     required this.updatedAt,
     required this.changeDate,
+    this.group = '',
   });
 
   @override
@@ -42,7 +47,8 @@ class Replacement {
         other.replaceFrom == replaceFrom &&
         other.replaceTo == replaceTo &&
         other.updatedAt == updatedAt &&
-        other.changeDate == changeDate;
+        other.changeDate == changeDate &&
+        other.group == group;
   }
 
   @override
@@ -53,6 +59,7 @@ class Replacement {
       replaceTo,
       updatedAt,
       changeDate,
+      group,
     );
   }
 }

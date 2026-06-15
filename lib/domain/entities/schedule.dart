@@ -15,6 +15,9 @@ class Schedule {
   /// Преподаватель
   final String teacher;
 
+  /// Группа, для которой проводится занятие
+  final String group;
+
   /// Время начала пары
   final String startTime;
 
@@ -27,6 +30,9 @@ class Schedule {
   /// Тип пары (numerator, denominator или null для обычных пар)
   final String? lessonType;
 
+  /// Дополнительный комментарий к занятию
+  final String comment;
+
   /// Конструктор элемента расписания
   ///
   /// Параметры:
@@ -34,19 +40,23 @@ class Schedule {
   /// - [number]: Номер пары (обязательный)
   /// - [subject]: Название предмета (обязательный)
   /// - [teacher]: Преподаватель (обязательный)
+  /// - [group]: Группа
   /// - [startTime]: Время начала пары (обязательный)
   /// - [endTime]: Время окончания пары (обязательный)
   /// - [building]: Корпус проведения пары (обязательный)
   /// - [lessonType]: Тип пары (опциональный)
+  /// - [comment]: Комментарий
   Schedule({
     required this.id,
     required this.number,
     required this.subject,
     required this.teacher,
+    this.group = '',
     required this.startTime,
     required this.endTime,
     required this.building,
     this.lessonType,
+    this.comment = '',
   });
 
   @override
@@ -57,9 +67,11 @@ class Schedule {
         other.number == number &&
         other.subject == subject &&
         other.teacher == teacher &&
+        other.group == group &&
         other.startTime == startTime &&
         other.endTime == endTime &&
-        other.building == building;
+        other.building == building &&
+        other.comment == comment;
   }
 
   @override
@@ -69,9 +81,11 @@ class Schedule {
       number,
       subject,
       teacher,
+      group,
       startTime,
       endTime,
       building,
+      comment,
     );
   }
 }

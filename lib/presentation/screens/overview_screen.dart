@@ -80,9 +80,9 @@ class _OverviewScreenState extends State<OverviewScreen> {
     final uri = _mapsUriForAddress(address);
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!ok && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Не удалось открыть карты')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Не удалось открыть карты')));
     }
   }
 
@@ -120,7 +120,8 @@ class _OverviewScreenState extends State<OverviewScreen> {
       onViewTeacherSchedule: () {
         Navigator.of(context).push(
           MaterialPageRoute<void>(
-            builder: (context) => TeacherScheduleScreen(teacherName: lesson.teacher),
+            builder: (context) =>
+                TeacherScheduleScreen(teacherName: lesson.teacher),
           ),
         );
       },
@@ -157,12 +158,24 @@ class _OverviewScreenState extends State<OverviewScreen> {
   }
 
   Future<void> initializeSchedule() async {
-    await fetchScheduleData(forceRefresh: false, showLoader: true, userInitiated: false);
-    await fetchScheduleData(forceRefresh: true, showLoader: false, userInitiated: false);
+    await fetchScheduleData(
+      forceRefresh: false,
+      showLoader: true,
+      userInitiated: false,
+    );
+    await fetchScheduleData(
+      forceRefresh: true,
+      showLoader: false,
+      userInitiated: false,
+    );
   }
 
   void onDataUpdated() {
-    fetchScheduleData(forceRefresh: false, showLoader: false, userInitiated: false);
+    fetchScheduleData(
+      forceRefresh: false,
+      showLoader: false,
+      userInitiated: false,
+    );
   }
 
   void _showOfflineBanner({required bool userInitiated}) {
@@ -247,7 +260,9 @@ class _OverviewScreenState extends State<OverviewScreen> {
       setState(() {
         todayScheduleData = scheduleResults[0];
         tomorrowScheduleData = scheduleResults[1];
-        isOffline = refreshOk == null ? repository.isOfflineBadgeVisible : !refreshOk;
+        isOffline = refreshOk == null
+            ? repository.isOfflineBadgeVisible
+            : !refreshOk;
         if (showLoader) isLoading = false;
       });
 
@@ -298,10 +313,11 @@ class _OverviewScreenState extends State<OverviewScreen> {
   Widget build(BuildContext context) {
     final bg = Theme.of(context).scaffoldBackgroundColor;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     final progressColor = isDark ? Colors.white : Colors.grey;
 
-    final hasCachedData = todayScheduleData.isNotEmpty || tomorrowScheduleData.isNotEmpty;
+    final hasCachedData =
+        todayScheduleData.isNotEmpty || tomorrowScheduleData.isNotEmpty;
     final isInitialLoading = isLoading && !hasCachedData;
 
     final forcedPage = widget.forcedPage;
@@ -329,7 +345,9 @@ class _OverviewScreenState extends State<OverviewScreen> {
 
     if (forcedPage != null) {
       final pageTitle = forcedPage == 0 ? 'Сегодня' : 'Завтра';
-      final scheduleData = forcedPage == 0 ? todayScheduleData : tomorrowScheduleData;
+      final scheduleData = forcedPage == 0
+          ? todayScheduleData
+          : tomorrowScheduleData;
       return Scaffold(
         backgroundColor: bg,
         body: SafeArea(
@@ -338,7 +356,8 @@ class _OverviewScreenState extends State<OverviewScreen> {
           child: Stack(
             children: [
               RefreshIndicator(
-                onRefresh: () => fetchScheduleData(forceRefresh: true, userInitiated: true),
+                onRefresh: () =>
+                    fetchScheduleData(forceRefresh: true, userInitiated: true),
                 color: progressColor,
                 child: buildSchedulePage(
                   scheduleData,
@@ -373,14 +392,28 @@ class _OverviewScreenState extends State<OverviewScreen> {
               },
               children: [
                 RefreshIndicator(
-                  onRefresh: () => fetchScheduleData(forceRefresh: true, userInitiated: true),
+                  onRefresh: () => fetchScheduleData(
+                    forceRefresh: true,
+                    userInitiated: true,
+                  ),
                   color: progressColor,
-                  child: buildSchedulePage(todayScheduleData, 'Сегодня', isDark: isDark),
+                  child: buildSchedulePage(
+                    todayScheduleData,
+                    'Сегодня',
+                    isDark: isDark,
+                  ),
                 ),
                 RefreshIndicator(
-                  onRefresh: () => fetchScheduleData(forceRefresh: true, userInitiated: true),
+                  onRefresh: () => fetchScheduleData(
+                    forceRefresh: true,
+                    userInitiated: true,
+                  ),
                   color: progressColor,
-                  child: buildSchedulePage(tomorrowScheduleData, 'Завтра', isDark: isDark),
+                  child: buildSchedulePage(
+                    tomorrowScheduleData,
+                    'Завтра',
+                    isDark: isDark,
+                  ),
                 ),
               ],
             ),
@@ -402,16 +435,24 @@ class _OverviewScreenState extends State<OverviewScreen> {
     );
   }
 
-  Widget buildSchedulePage(List<Schedule> scheduleData, String pageTitle, {required bool isDark}) {
+  Widget buildSchedulePage(
+    List<Schedule> scheduleData,
+    String pageTitle, {
+    required bool isDark,
+  }) {
     final cs = Theme.of(context).colorScheme;
     final onSurface = cs.onSurface;
     final onSurfaceV = cs.onSurfaceVariant;
 
-    final targetDate =
-        pageTitle == 'Сегодня' ? DateTime.now() : DateTime.now().add(const Duration(days: 1));
+    final targetDate = pageTitle == 'Сегодня'
+        ? DateTime.now()
+        : DateTime.now().add(const Duration(days: 1));
     final weekType = getWeekTypeForDate(targetDate);
 
-    final filteredScheduleData = filterScheduleByWeekType(scheduleData, weekType);
+    final filteredScheduleData = filterScheduleByWeekType(
+      scheduleData,
+      weekType,
+    );
     final filteredChanges = getFilteredScheduleChanges(pageTitle);
 
     final callsData = CallsUtil.getCalls();
@@ -421,7 +462,11 @@ class _OverviewScreenState extends State<OverviewScreen> {
             schedule: List<Schedule>.from(filteredScheduleData),
             hasBuildingOverride: false,
           )
-        : applyScheduleChanges(filteredScheduleData, filteredChanges, callsData);
+        : applyScheduleChanges(
+            filteredScheduleData,
+            filteredChanges,
+            callsData,
+          );
 
     final scheduleWithChanges = changesResult.schedule;
     final hasBuildingOverride = changesResult.hasBuildingOverride;
@@ -432,7 +477,9 @@ class _OverviewScreenState extends State<OverviewScreen> {
     final canOpen = _canOpenBuilding(building);
 
     return CustomScrollView(
-      physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+      physics: const BouncingScrollPhysics(
+        parent: AlwaysScrollableScrollPhysics(),
+      ),
       slivers: [
         SliverToBoxAdapter(
           child: SizedBox(height: MediaQuery.of(context).padding.top),
@@ -454,7 +501,10 @@ class _OverviewScreenState extends State<OverviewScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   child: Row(
                     children: [
                       Expanded(
@@ -474,7 +524,9 @@ class _OverviewScreenState extends State<OverviewScreen> {
                           alignment: Alignment.centerRight,
                           child: GestureDetector(
                             behavior: HitTestBehavior.translucent,
-                            onTap: canOpen ? () => _openBuildingInMaps(context, building) : null,
+                            onTap: canOpen
+                                ? () => _openBuildingInMaps(context, building)
+                                : null,
                             child: Location(
                               label: building,
                               showOverrideIndicator: hasBuildingOverride,
@@ -513,7 +565,10 @@ class _OverviewScreenState extends State<OverviewScreen> {
                               const SizedBox(height: 8),
                               Text(
                                 'Нет запланированных занятий',
-                                style: TextStyle(fontSize: 16, color: onSurfaceV),
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: onSurfaceV,
+                                ),
                               ),
                             ],
                           ),
@@ -527,7 +582,9 @@ class _OverviewScreenState extends State<OverviewScreen> {
 
                           try {
                             final periodInt = int.tryParse(item.number);
-                            if (periodInt != null && periodInt > 0 && periodInt <= callsData.length) {
+                            if (periodInt != null &&
+                                periodInt > 0 &&
+                                periodInt <= callsData.length) {
                               final call = callsData[periodInt - 1];
                               lessonStartTime = call.startTime;
                               lessonEndTime = call.endTime;
@@ -537,10 +594,11 @@ class _OverviewScreenState extends State<OverviewScreen> {
                           Widget card = LessonCard(
                             number: item.number,
                             subject: item.subject,
-                            teacher: item.teacher,
+                            teacher: _lessonSubtitle(item),
                             startTime: lessonStartTime,
                             endTime: lessonEndTime,
                             accentColor: lessonAccent,
+                            comment: item.comment,
                           );
                           if (_isStudent) {
                             card = Material(
@@ -558,11 +616,16 @@ class _OverviewScreenState extends State<OverviewScreen> {
                           }
                           final List<Widget> widgets = [card];
 
-                          if (index < scheduleWithChanges.length - 1) {
-                            String nextLessonStartTime = scheduleWithChanges[index + 1].startTime;
+                          if (index < scheduleWithChanges.length - 1 &&
+                              scheduleWithChanges[index + 1].number.trim() !=
+                                  item.number.trim()) {
+                            String nextLessonStartTime =
+                                scheduleWithChanges[index + 1].startTime;
 
                             try {
-                              final nextPeriodInt = int.tryParse(scheduleWithChanges[index + 1].number);
+                              final nextPeriodInt = int.tryParse(
+                                scheduleWithChanges[index + 1].number,
+                              );
                               if (nextPeriodInt != null &&
                                   nextPeriodInt > 0 &&
                                   nextPeriodInt <= callsData.length) {
@@ -587,7 +650,10 @@ class _OverviewScreenState extends State<OverviewScreen> {
                       ],
                       if (filteredChanges.isNotEmpty) ...[
                         const SizedBox(height: 30),
-                        Divider(color: cs.outlineVariant.withOpacity(0.8), thickness: 1),
+                        Divider(
+                          color: cs.outlineVariant.withOpacity(0.8),
+                          thickness: 1,
+                        ),
                         const SizedBox(height: 20),
                         Text(
                           'Изменения в расписании',
@@ -605,6 +671,8 @@ class _OverviewScreenState extends State<OverviewScreen> {
                               lessonNumber: change.lessonNumber,
                               replaceFrom: change.replaceFrom,
                               replaceTo: change.replaceTo,
+                              group: change.group,
+                              teacherView: !_isStudent,
                             ),
                           );
                         }),
@@ -623,7 +691,10 @@ class _OverviewScreenState extends State<OverviewScreen> {
 
   String? getWeekTypeForDate(DateTime date) => DateFormatter.getWeekType(date);
 
-  List<Schedule> filterScheduleByWeekType(List<Schedule> schedule, String? weekType) {
+  List<Schedule> filterScheduleByWeekType(
+    List<Schedule> schedule,
+    String? weekType,
+  ) {
     if (weekType == null) return schedule;
 
     final Map<String, List<Schedule>> lessonsByPeriod = {};
@@ -635,15 +706,20 @@ class _OverviewScreenState extends State<OverviewScreen> {
 
     lessonsByPeriod.forEach((_, lessons) {
       final numeratorLessons = lessons
-          .where((l) => l.lessonType == 'numerator' && l.subject.trim().isNotEmpty)
+          .where(
+            (l) => l.lessonType == 'numerator' && l.subject.trim().isNotEmpty,
+          )
           .toList();
 
       final denominatorLessons = lessons
-          .where((l) => l.lessonType == 'denominator' && l.subject.trim().isNotEmpty)
+          .where(
+            (l) => l.lessonType == 'denominator' && l.subject.trim().isNotEmpty,
+          )
           .toList();
 
-      final regularLessons =
-          lessons.where((l) => l.lessonType == null && l.subject.trim().isNotEmpty).toList();
+      final regularLessons = lessons
+          .where((l) => l.lessonType == null && l.subject.trim().isNotEmpty)
+          .toList();
 
       if (numeratorLessons.isNotEmpty || denominatorLessons.isNotEmpty) {
         if (weekType == 'Числитель' && numeratorLessons.isNotEmpty) {
@@ -667,7 +743,10 @@ class _OverviewScreenState extends State<OverviewScreen> {
     List callsData,
   ) {
     if (changes.isEmpty) {
-      return ScheduleChangesResult(schedule: List<Schedule>.from(schedule), hasBuildingOverride: false);
+      return ScheduleChangesResult(
+        schedule: List<Schedule>.from(schedule),
+        hasBuildingOverride: false,
+      );
     }
 
     final List<Schedule> result = List<Schedule>.from(schedule);
@@ -677,10 +756,17 @@ class _OverviewScreenState extends State<OverviewScreen> {
       final lessonNumber = change.lessonNumber.trim();
       if (lessonNumber.isEmpty) continue;
 
-      final normalizedReplaceTo = change.replaceTo.replaceAll('\u00A0', ' ').trim();
+      final normalizedReplaceTo = change.replaceTo
+          .replaceAll('\u00A0', ' ')
+          .trim();
       final shouldHide = shouldHideLessonFromOverview(normalizedReplaceTo);
 
-      final existingIndex = result.indexWhere((l) => l.number.trim() == lessonNumber);
+      final existingIndex = result.indexWhere((l) {
+        final sameLesson = l.number.trim() == lessonNumber;
+        if (!sameLesson) return false;
+        if (_isStudent || change.group.trim().isEmpty) return true;
+        return _groupsMatch(l.group, change.group);
+      });
 
       if (shouldHide) {
         if (existingIndex != -1) result.removeAt(existingIndex);
@@ -688,7 +774,9 @@ class _OverviewScreenState extends State<OverviewScreen> {
       }
 
       final parsedDetails = parseLessonDetails(normalizedReplaceTo);
-      final subject = parsedDetails.subject.isNotEmpty ? parsedDetails.subject : normalizedReplaceTo;
+      final subject = parsedDetails.subject.isNotEmpty
+          ? parsedDetails.subject
+          : normalizedReplaceTo;
       final teacher = parsedDetails.teacher;
 
       final updatedBuilding = resolveBuildingFromChange(
@@ -708,11 +796,17 @@ class _OverviewScreenState extends State<OverviewScreen> {
           id: existing.id,
           number: existing.number,
           subject: subject,
-          teacher: teacher.isNotEmpty ? teacher : existing.teacher,
+          teacher: _isStudent && teacher.isNotEmpty
+              ? teacher
+              : existing.teacher,
+          group: existing.group,
           startTime: existing.startTime,
           endTime: existing.endTime,
-          building: updatedBuilding.isNotEmpty ? updatedBuilding : existing.building,
+          building: updatedBuilding.isNotEmpty
+              ? updatedBuilding
+              : existing.building,
           lessonType: existing.lessonType,
+          comment: existing.comment,
         );
       } else {
         final timing = lessonTimingForNumber(lessonNumber, callsData);
@@ -722,28 +816,37 @@ class _OverviewScreenState extends State<OverviewScreen> {
             number: lessonNumber,
             subject: subject,
             teacher: teacher,
+            group: change.group,
             startTime: timing.start,
             endTime: timing.end,
-            building: updatedBuilding.isNotEmpty ? updatedBuilding : 'Дистанционно',
+            building: updatedBuilding.isNotEmpty
+                ? updatedBuilding
+                : 'Дистанционно',
             lessonType: null,
           ),
         );
       }
     }
 
-    result.sort((a, b) {
+    final normalizedResult = _mergeCombinedLessons(result);
+
+    normalizedResult.sort((a, b) {
       final aN = tryParseLessonNumber(a.number);
       final bN = tryParseLessonNumber(b.number);
       if (aN != null && bN != null) return aN.compareTo(bN);
       return a.number.compareTo(b.number);
     });
 
-    return ScheduleChangesResult(schedule: result, hasBuildingOverride: hasBuildingOverride);
+    return ScheduleChangesResult(
+      schedule: normalizedResult,
+      hasBuildingOverride: hasBuildingOverride,
+    );
   }
 
   bool shouldHideLessonFromOverview(String replaceTo) {
     final normalized = replaceTo.toLowerCase();
-    return normalized.startsWith('занятие отменено') || normalized.startsWith('занятие перенесено на');
+    return normalized.startsWith('занятие отменено') ||
+        normalized.startsWith('занятие перенесено на');
   }
 
   String resolveBuildingFromChange(String replaceTo, String fallbackBuilding) {
@@ -793,6 +896,121 @@ class _OverviewScreenState extends State<OverviewScreen> {
 
   String formatDate(DateTime date) => DateFormatter.formatDayWithMonth(date);
 
+  String _lessonSubtitle(Schedule lesson) {
+    if (!_isStudent && lesson.group.isNotEmpty) return lesson.group;
+    return lesson.teacher;
+  }
+
+  bool _groupsMatch(String scheduleGroup, String replacementGroup) {
+    final left = scheduleGroup.trim().toUpperCase();
+    final right = replacementGroup.trim().toUpperCase();
+    if (left.isEmpty || right.isEmpty) return false;
+    return left == right || left.contains(right) || right.contains(left);
+  }
+
+  List<Schedule> _mergeCombinedLessons(List<Schedule> schedule) {
+    final Map<String, Schedule> merged = {};
+
+    for (final lesson in schedule) {
+      final key = _combinedLessonKey(lesson);
+      final existing = merged[key];
+      if (existing == null) {
+        merged[key] = lesson;
+        continue;
+      }
+
+      merged[key] = Schedule(
+        id: existing.id,
+        number: existing.number,
+        subject: existing.subject,
+        teacher: existing.teacher.isNotEmpty
+            ? existing.teacher
+            : lesson.teacher,
+        group: _mergeGroupLabels(existing.group, lesson.group),
+        startTime: existing.startTime,
+        endTime: existing.endTime,
+        building: existing.building.isNotEmpty
+            ? existing.building
+            : lesson.building,
+        lessonType: existing.lessonType,
+        comment: _mergeComments(existing.comment, [
+          lesson.comment,
+          if (_combinedWithGroupLabel(existing.group, lesson.group).isNotEmpty)
+            'Объединено с ${_combinedWithGroupLabel(existing.group, lesson.group)}',
+        ]),
+      );
+    }
+
+    return merged.values.toList();
+  }
+
+  String _combinedLessonKey(Schedule lesson) {
+    final number = lesson.number.trim();
+    final subject = _normalizeLessonText(lesson.subject);
+    if (!_isStudent) return '$number|$subject';
+
+    return '$number|$subject|${_normalizeLessonText(lesson.teacher)}';
+  }
+
+  String _normalizeLessonText(String value) {
+    return value.replaceAll(RegExp(r'\s+'), ' ').trim().toLowerCase();
+  }
+
+  String _mergeGroupLabels(String left, String right) {
+    final groups = <String>[];
+    for (final group in [
+      ..._splitGroupLabels(left),
+      ..._splitGroupLabels(right),
+    ]) {
+      if (group.isEmpty) continue;
+      if (!groups.any(
+        (existing) => existing.toUpperCase() == group.toUpperCase(),
+      )) {
+        groups.add(group);
+      }
+    }
+    return groups.join(', ');
+  }
+
+  List<String> _splitGroupLabels(String value) {
+    return value
+        .split(',')
+        .map(
+          (raw) => raw
+              .replaceAll(
+                RegExp(r'^\s*группа\s*[:\-]?\s*', caseSensitive: false),
+                '',
+              )
+              .trim(),
+        )
+        .where((group) => group.isNotEmpty)
+        .toList();
+  }
+
+  String _combinedWithGroupLabel(String existingGroup, String mergedGroup) {
+    final existingGroups = _splitGroupLabels(
+      existingGroup,
+    ).map((group) => group.toUpperCase()).toSet();
+    final newGroups = _splitGroupLabels(
+      mergedGroup,
+    ).where((group) => !existingGroups.contains(group.toUpperCase())).toList();
+    return newGroups.join(', ');
+  }
+
+  String _mergeComments(String existing, List<String>? additions) {
+    final comments = <String>[];
+    for (final raw in [existing, ...?additions]) {
+      final comment = raw.trim();
+      if (comment.isEmpty) continue;
+      if (!comments.any(
+        (item) => item.toLowerCase() == comment.toLowerCase(),
+      )) {
+        comments.add(comment);
+      }
+    }
+    return comments.join(', ');
+  }
+
   List<Replacement> getFilteredScheduleChanges(String pageTitle) {
     final today = DateTime.now();
     final tomorrow = DateTime.now().add(const Duration(days: 1));
@@ -829,7 +1047,10 @@ class ScheduleChangesResult {
   final List<Schedule> schedule;
   final bool hasBuildingOverride;
 
-  ScheduleChangesResult({required this.schedule, required this.hasBuildingOverride});
+  ScheduleChangesResult({
+    required this.schedule,
+    required this.hasBuildingOverride,
+  });
 }
 
 const _overviewHeaderHeight = 176.0;
@@ -867,12 +1088,7 @@ class _StaticOverviewHeader extends StatelessWidget {
     const gapPillIcon = 10.0;
     const iconSize = 18.0;
 
-    final pill = _WeekTypePill(
-      text: weekType,
-      fontSize: 13,
-      padH: 14,
-      padV: 6,
-    );
+    final pill = _WeekTypePill(text: weekType, fontSize: 13, padH: 14, padV: 6);
 
     const pillFont = 13.0;
     const pillPV = 6.0;
@@ -902,14 +1118,14 @@ class _StaticOverviewHeader extends StatelessWidget {
           child: Stack(
             clipBehavior: Clip.none,
             children: [
-              Align(
-                alignment: Alignment.topLeft,
-                child: pill,
-              ),
+              Align(alignment: Alignment.topLeft, child: pill),
               Align(
                 alignment: const Alignment(-1.0, -0.35),
                 child: Padding(
-                  padding: EdgeInsets.only(right: iconSize + 12, top: reservedTop),
+                  padding: EdgeInsets.only(
+                    right: iconSize + 12,
+                    top: reservedTop,
+                  ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -929,10 +1145,7 @@ class _StaticOverviewHeader extends StatelessWidget {
                         dateLabel,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: dateSize,
-                          color: subColor,
-                        ),
+                        style: TextStyle(fontSize: dateSize, color: subColor),
                       ),
                     ],
                   ),
@@ -978,8 +1191,12 @@ class _WeekTypePill extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final bg = isDark ? Colors.white.withOpacity(0.10) : Colors.black.withOpacity(0.06);
-    final border = isDark ? Colors.white.withOpacity(0.12) : Colors.black.withOpacity(0.08);
+    final bg = isDark
+        ? Colors.white.withOpacity(0.10)
+        : Colors.black.withOpacity(0.06);
+    final border = isDark
+        ? Colors.white.withOpacity(0.12)
+        : Colors.black.withOpacity(0.08);
     final fg = isDark ? Colors.white : Colors.black87;
 
     return Container(

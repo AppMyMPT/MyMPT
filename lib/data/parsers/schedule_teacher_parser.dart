@@ -10,7 +10,11 @@ class ScheduleTeacherParser {
     final schedule = <String, List<Lesson>>{};
 
     // Очищаем и разбиваем имя преподавателя на части
-    final parts = teacherName.trim().split(RegExp(r'\s+')).where((e) => e.isNotEmpty).toList();
+    final parts = teacherName
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((e) => e.isNotEmpty)
+        .toList();
     if (parts.isEmpty) return {};
 
     String lastName = '';
@@ -41,22 +45,28 @@ class ScheduleTeacherParser {
         initialsNormalized = rest.replaceAll(' ', '');
       } else {
         // Если точки нет (например, "Иван Иванович"), берем первые буквы
-        final initials = otherParts.take(2).map((p) => p.isNotEmpty ? p[0].toLowerCase() : '').where((c) => c.isNotEmpty).toList();
+        final initials = otherParts
+            .take(2)
+            .map((p) => p.isNotEmpty ? p[0].toLowerCase() : '')
+            .where((c) => c.isNotEmpty)
+            .toList();
         initialsNormalized = initials.map((c) => '$c.').join();
       }
     }
 
     final tabPanels = document.querySelectorAll('[role="tabpanel"]');
-    
+
     // Создаем карту соответствия id вкладки -> Название группы
     final Map<String, String> idToGroup = {};
-    final tabLinks = document.querySelectorAll('ul.nav-tabs > li > a[href^="#"]');
+    final tabLinks = document.querySelectorAll(
+      'ul.nav-tabs > li > a[href^="#"]',
+    );
     for (var link in tabLinks) {
-       final href = link.attributes['href'];
-       if (href != null && href.startsWith('#')) {
-          final tabId = href.substring(1);
-          idToGroup[tabId] = link.text.trim();
-       }
+      final href = link.attributes['href'];
+      if (href != null && href.startsWith('#')) {
+        final tabId = href.substring(1);
+        idToGroup[tabId] = link.text.trim();
+      }
     }
 
     for (var tabPanel in tabPanels) {
@@ -65,7 +75,7 @@ class ScheduleTeacherParser {
       if (tabPanel.querySelectorAll('[role="tabpanel"]').isNotEmpty) {
         continue;
       }
-      
+
       String currentGroup = '';
 
       // Пытаемся найти "Группа П50-1-23" внутри панели
@@ -86,7 +96,9 @@ class ScheduleTeacherParser {
 
       // На случай если каким-то образом попало "Расписание занятий для ..."
       if (currentGroup.startsWith('Расписание занятий для ')) {
-        currentGroup = currentGroup.replaceFirst('Расписание занятий для ', '').trim();
+        currentGroup = currentGroup
+            .replaceFirst('Расписание занятий для ', '')
+            .trim();
       }
 
       if (currentGroup.isEmpty) continue;
@@ -116,7 +128,9 @@ class ScheduleTeacherParser {
           final numberMatch = RegExp(r'\d+').firstMatch(numberTimeText);
           final number = numberMatch?.group(0) ?? '';
 
-          final timeMatch = RegExp(r'(\d{1,2}:\d{2})\s*[-–]\s*(\d{1,2}:\d{2})').firstMatch(numberTimeText);
+          final timeMatch = RegExp(
+            r'(\d{1,2}:\d{2})\s*[-–]\s*(\d{1,2}:\d{2})',
+          ).firstMatch(numberTimeText);
           final startTime = timeMatch?.group(1) ?? '';
           final endTime = timeMatch?.group(2) ?? '';
 
@@ -128,55 +142,76 @@ class ScheduleTeacherParser {
 
           if (subjectLabels.isEmpty || teacherLabels.isEmpty) {
             final cellTeacherText = teacherCell.text.toLowerCase();
-            if (_isTeacherMatch(cellTeacherText, lastName, initialsNormalized)) {
-               final building = h4.querySelector('span')?.text.trim() ?? '';
-               final subject = subjectCell.text.trim();
+            if (_isTeacherMatch(
+              cellTeacherText,
+              lastName,
+              initialsNormalized,
+            )) {
+              final building = h4.querySelector('span')?.text.trim() ?? '';
+              final subject = subjectCell.text.trim();
 
-               if (!schedule.containsKey(day)) schedule[day] = [];
-               schedule[day]!.add(Lesson(
-                 number: number,
-                 subject: subject,
-                 teacher: currentGroup,
-                 startTime: startTime,
-                 endTime: endTime,
-                 building: building,
-                 lessonType: null
-               ));
+              if (!schedule.containsKey(day)) schedule[day] = [];
+              schedule[day]!.add(
+                Lesson(
+                  number: number,
+                  subject: subject,
+                  teacher: teacherName.trim(),
+                  group: currentGroup,
+                  startTime: startTime,
+                  endTime: endTime,
+                  building: building,
+                  lessonType: null,
+                ),
+              );
             }
           } else {
-             final count = _pairedLabelsCount(subjectLabels, teacherLabels);
-             for (var i = 0; i < count; i++) {
-                final cellTeacherText = teacherLabels[i].text.toLowerCase();
-                if (_isTeacherMatch(cellTeacherText, lastName, initialsNormalized)) {
-                   final building = h4.querySelector('span')?.text.trim() ?? '';
-                   final subject = subjectLabels[i].text.trim();
-                   final lessonType = _resolveLessonType(subjectLabels[i]);
-                   
-                   if (!schedule.containsKey(day)) schedule[day] = [];
-                   schedule[day]!.add(Lesson(
-                     number: number,
-                     subject: subject,
-                     teacher: currentGroup, // Сохраняем группу
-                     startTime: startTime,
-                     endTime: endTime,
-                     building: building,
-                     lessonType: lessonType
-                   ));
-                }
-             }
+            final count = _pairedLabelsCount(subjectLabels, teacherLabels);
+            for (var i = 0; i < count; i++) {
+              final cellTeacherText = teacherLabels[i].text.toLowerCase();
+              if (_isTeacherMatch(
+                cellTeacherText,
+                lastName,
+                initialsNormalized,
+              )) {
+                final building = h4.querySelector('span')?.text.trim() ?? '';
+                final subject = subjectLabels[i].text.trim();
+                final lessonType = _resolveLessonType(subjectLabels[i]);
+
+                if (!schedule.containsKey(day)) schedule[day] = [];
+                schedule[day]!.add(
+                  Lesson(
+                    number: number,
+                    subject: subject,
+                    teacher: teacherName.trim(),
+                    group: currentGroup,
+                    startTime: startTime,
+                    endTime: endTime,
+                    building: building,
+                    lessonType: lessonType,
+                  ),
+                );
+              }
+            }
           }
         }
       }
     }
-    
+
     return _mergeTeacherLessons(schedule);
   }
 
-  bool _isTeacherMatch(String cellText, String lastName, String initialsNormalized) {
+  bool _isTeacherMatch(
+    String cellText,
+    String lastName,
+    String initialsNormalized,
+  ) {
     // Поиск точного совпадения фамилии (с границами)
     // Используем [^а-яёa-z] чтобы исключить совпадения внутри других слов
-    final nameRegex = RegExp(r'(^|\s|[^а-яёa-z])' + RegExp.escape(lastName) + r'($|\s|[^а-яёa-z])', caseSensitive: false);
-    
+    final nameRegex = RegExp(
+      r'(^|\s|[^а-яёa-z])' + RegExp.escape(lastName) + r'($|\s|[^а-яёa-z])',
+      caseSensitive: false,
+    );
+
     if (!nameRegex.hasMatch(cellText)) {
       return false; // Фамилии нет — точно не он
     }
@@ -189,7 +224,9 @@ class ScheduleTeacherParser {
 
   int _pairedLabelsCount(List<Element> subjects, List<Element> teachers) {
     if (subjects.isEmpty || teachers.isEmpty) return 0;
-    return subjects.length < teachers.length ? subjects.length : teachers.length;
+    return subjects.length < teachers.length
+        ? subjects.length
+        : teachers.length;
   }
 
   String? _resolveLessonType(Element label) {
@@ -199,39 +236,48 @@ class ScheduleTeacherParser {
     return null;
   }
 
-  Map<String, List<Lesson>> _mergeTeacherLessons(Map<String, List<Lesson>> rawSchedule) {
-     final result = <String, List<Lesson>>{};
-     
-     rawSchedule.forEach((day, lessons) {
-        final Map<String, Lesson> merged = {};
-        for (var lesson in lessons) {
-           final key = '${lesson.number}_${lesson.lessonType ?? "all"}';
-           if (merged.containsKey(key)) {
-              final existing = merged[key]!;
-              final newGroup = existing.teacher == null || existing.teacher!.isEmpty 
-                  ? (lesson.teacher ?? '') 
-                  // Если группа уже есть в строке, не дублируем её
-                  : (existing.teacher!.contains(lesson.teacher ?? '') 
-                      ? existing.teacher 
-                      : '${existing.teacher}, ${lesson.teacher ?? ''}');
-                  
-              merged[key] = Lesson(
-                  number: existing.number,
-                  subject: existing.subject,
-                  teacher: newGroup,
-                  startTime: existing.startTime,
-                  endTime: existing.endTime,
-                  building: existing.building,
-                  lessonType: existing.lessonType
-              );
-           } else {
-              merged[key] = lesson;
-           }
+  Map<String, List<Lesson>> _mergeTeacherLessons(
+    Map<String, List<Lesson>> rawSchedule,
+  ) {
+    final result = <String, List<Lesson>>{};
+
+    rawSchedule.forEach((day, lessons) {
+      final Map<String, Lesson> merged = {};
+      for (var lesson in lessons) {
+        final key =
+            '${lesson.number}_${lesson.lessonType ?? "all"}_${lesson.subject.trim().toLowerCase()}';
+        if (merged.containsKey(key)) {
+          final existing = merged[key]!;
+          final newGroup = existing.group.isEmpty
+              ? lesson.group
+              // Если группа уже есть в строке, не дублируем её
+              : (existing.group.contains(lesson.group)
+                    ? existing.group
+                    : '${existing.group}, ${lesson.group}');
+
+          merged[key] = Lesson(
+            number: existing.number,
+            subject: existing.subject,
+            teacher: existing.teacher,
+            group: newGroup,
+            startTime: existing.startTime,
+            endTime: existing.endTime,
+            building: existing.building,
+            lessonType: existing.lessonType,
+          );
+        } else {
+          merged[key] = lesson;
         }
-        result[day] = merged.values.toList()..sort((a, b) => int.parse(a.number).compareTo(int.parse(b.number)));
-     });
-     
-     return _sortDays(result);
+      }
+      result[day] = merged.values.toList()
+        ..sort((a, b) {
+          final aNumber = int.tryParse(a.number) ?? 0;
+          final bNumber = int.tryParse(b.number) ?? 0;
+          return aNumber.compareTo(bNumber);
+        });
+    });
+
+    return _sortDays(result);
   }
 
   Map<String, List<Lesson>> _sortDays(Map<String, List<Lesson>> schedule) {
@@ -245,11 +291,12 @@ class ScheduleTeacherParser {
       'ВОСКРЕСЕНЬЕ': 7,
     };
 
-    final sortedKeys = schedule.keys.toList()..sort((a, b) {
-      final orderA = daysOrder[a] ?? 99;
-      final orderB = daysOrder[b] ?? 99;
-      return orderA.compareTo(orderB);
-    });
+    final sortedKeys = schedule.keys.toList()
+      ..sort((a, b) {
+        final orderA = daysOrder[a] ?? 99;
+        final orderB = daysOrder[b] ?? 99;
+        return orderA.compareTo(orderB);
+      });
 
     final sortedSchedule = <String, List<Lesson>>{};
     for (final key in sortedKeys) {

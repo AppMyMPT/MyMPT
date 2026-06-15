@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:my_mpt/data/datasources/cache/schedule_cache_data_source.dart';
@@ -31,7 +31,8 @@ class ScheduleRepository implements ScheduleRepositoryInterface {
   DateTime? _lastFailedRefreshAttempt;
   bool _cacheInitialized = false;
   bool _lastRefreshSucceeded = true;
-  ScheduleRefreshFailureReason _lastFailureReason = ScheduleRefreshFailureReason.none;
+  ScheduleRefreshFailureReason _lastFailureReason =
+      ScheduleRefreshFailureReason.none;
 
   static const Duration _failedRefreshCooldown = Duration(seconds: 45);
 
@@ -46,7 +47,8 @@ class ScheduleRepository implements ScheduleRepositoryInterface {
 
   DateTime? get lastUpdate => _lastUpdate;
 
-  bool get isOfflineBadgeVisible => !_lastRefreshSucceeded && _lastUpdate != null;
+  bool get isOfflineBadgeVisible =>
+      !_lastRefreshSucceeded && _lastUpdate != null;
 
   DateTime? get lastFailedRefreshAttempt => _lastFailedRefreshAttempt;
   ScheduleRefreshFailureReason get lastFailureReason => _lastFailureReason;
@@ -108,7 +110,9 @@ class ScheduleRepository implements ScheduleRepositoryInterface {
     return _cachedTomorrowSchedule ?? [];
   }
 
-  Future<Map<String, List<Schedule>>> getWeeklyScheduleForTeacher(String teacherName) async {
+  Future<Map<String, List<Schedule>>> getWeeklyScheduleForTeacher(
+    String teacherName,
+  ) async {
     if (teacherName.trim().isEmpty) return {};
     try {
       final parsedSchedule = await _remoteDatasource.fetchWeeklySchedule(
@@ -124,6 +128,7 @@ class ScheduleRepository implements ScheduleRepositoryInterface {
             number: lesson.number,
             subject: lesson.subject,
             teacher: lesson.teacher,
+            group: lesson.group,
             startTime: lesson.startTime,
             endTime: lesson.endTime,
             building: lesson.building,
@@ -166,7 +171,8 @@ class ScheduleRepository implements ScheduleRepositoryInterface {
 
   bool _isInFailedCooldown() {
     if (_lastFailedRefreshAttempt == null) return false;
-    return DateTime.now().difference(_lastFailedRefreshAttempt!) < _failedRefreshCooldown;
+    return DateTime.now().difference(_lastFailedRefreshAttempt!) <
+        _failedRefreshCooldown;
   }
 
   Future<bool> _refreshAllData({required bool forceRefresh}) {
@@ -233,6 +239,7 @@ class ScheduleRepository implements ScheduleRepositoryInterface {
             number: lesson.number,
             subject: lesson.subject,
             teacher: lesson.teacher,
+            group: lesson.group,
             startTime: lesson.startTime,
             endTime: lesson.endTime,
             building: lesson.building,
@@ -292,8 +299,10 @@ class ScheduleRepository implements ScheduleRepositoryInterface {
       if (cache == null) return;
 
       _cachedWeeklySchedule = cache.weeklySchedule;
-      _cachedTodaySchedule = (_cachedWeeklySchedule ?? {})[_getTodayInRussian()] ?? [];
-      _cachedTomorrowSchedule = (_cachedWeeklySchedule ?? {})[_getTomorrowInRussian()] ?? [];
+      _cachedTodaySchedule =
+          (_cachedWeeklySchedule ?? {})[_getTodayInRussian()] ?? [];
+      _cachedTomorrowSchedule =
+          (_cachedWeeklySchedule ?? {})[_getTomorrowInRussian()] ?? [];
       _lastUpdate = cache.lastUpdate;
 
       _lastRefreshSucceeded = true;

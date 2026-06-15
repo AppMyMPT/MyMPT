@@ -12,6 +12,9 @@ class Lesson {
   /// Преподаватель
   final String teacher;
 
+  /// Группа, для которой проводится пара
+  final String group;
+
   /// Время начала пары
   final String startTime;
 
@@ -28,6 +31,7 @@ class Lesson {
     required this.number,
     required this.subject,
     required this.teacher,
+    this.group = '',
     required this.startTime,
     required this.endTime,
     required this.building,
@@ -39,6 +43,7 @@ class Lesson {
       number: (json['number'] ?? '') as String,
       subject: (json['subject'] ?? '') as String,
       teacher: (json['teacher'] ?? '') as String,
+      group: (json['group'] ?? '') as String,
       startTime: (json['startTime'] ?? '') as String,
       endTime: (json['endTime'] ?? '') as String,
       building: (json['building'] ?? '') as String,
@@ -48,7 +53,7 @@ class Lesson {
 
   @override
   String toString() {
-    return 'Lesson(number: $number, subject: $subject, teacher: $teacher, startTime: $startTime, endTime: $endTime, building: $building)';
+    return 'Lesson(number: $number, subject: $subject, teacher: $teacher, group: $group, startTime: $startTime, endTime: $endTime, building: $building)';
   }
 
   Map<String, dynamic> toJson() {
@@ -56,6 +61,7 @@ class Lesson {
       'number': number,
       'subject': subject,
       'teacher': teacher,
+      'group': group,
       'startTime': startTime,
       'endTime': endTime,
       'building': building,

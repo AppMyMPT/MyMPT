@@ -10,10 +10,7 @@ import 'package:my_mpt/presentation/widgets/schedule/day_section.dart';
 class TeacherScheduleScreen extends StatefulWidget {
   final String teacherName;
 
-  const TeacherScheduleScreen({
-    super.key,
-    required this.teacherName,
-  });
+  const TeacherScheduleScreen({super.key, required this.teacherName});
 
   @override
   State<TeacherScheduleScreen> createState() => _TeacherScheduleScreenState();
@@ -34,7 +31,9 @@ class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> {
   Future<void> _loadSchedule() async {
     setState(() => _isLoading = true);
     try {
-      final schedule = await _repository.getWeeklyScheduleForTeacher(widget.teacherName);
+      final schedule = await _repository.getWeeklyScheduleForTeacher(
+        widget.teacherName,
+      );
       if (mounted) {
         setState(() {
           _schedule = schedule;
@@ -79,7 +78,7 @@ class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> {
     final primaryColor = isDark ? Colors.white : Colors.black87;
     final now = DateTime.now();
     final weekType = DateFormatter.getWeekType(now);
-    
+
     final progressColor = isDark ? Colors.white : Colors.grey;
 
     return Scaffold(
@@ -118,43 +117,44 @@ class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> {
       body: _isLoading
           ? Center(child: CircularProgressIndicator(color: progressColor))
           : _schedule.isEmpty
-              ? Center(
-                  child: Text(
-                    'Расписание не найдено',
-                    style: TextStyle(
-                      color: isDark ? Colors.white70 : Colors.black54,
-                      fontSize: 16,
-                    ),
-                  ),
-                )
-              : RefreshIndicator(
-                  onRefresh: () async {
-                    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
-                      HapticFeedback.lightImpact();
-                    }
-                    await _loadSchedule();
-                  },
-                  color: progressColor,
-                  child: ListView.builder(
-                    physics: const AlwaysScrollableScrollPhysics(
-                      parent: BouncingScrollPhysics(),
-                    ),
-                    padding: const EdgeInsets.only(top: 16, bottom: 40),
-                    itemCount: _schedule.length,
-                    itemBuilder: (context, index) {
-                      final entry = _schedule.entries.elementAt(index);
-                      final building = _primaryBuilding(entry.value);
-                      
-                      return DaySection(
-                        title: entry.key,
-                        building: building,
-                        lessons: entry.value,
-                        accentColor: Colors.grey,
-                        weekType: weekType,
-                      );
-                    },
-                  ),
+          ? Center(
+              child: Text(
+                'Расписание не найдено',
+                style: TextStyle(
+                  color: isDark ? Colors.white70 : Colors.black54,
+                  fontSize: 16,
                 ),
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: () async {
+                if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+                  HapticFeedback.lightImpact();
+                }
+                await _loadSchedule();
+              },
+              color: progressColor,
+              child: ListView.builder(
+                physics: const AlwaysScrollableScrollPhysics(
+                  parent: BouncingScrollPhysics(),
+                ),
+                padding: const EdgeInsets.only(top: 16, bottom: 40),
+                itemCount: _schedule.length,
+                itemBuilder: (context, index) {
+                  final entry = _schedule.entries.elementAt(index);
+                  final building = _primaryBuilding(entry.value);
+
+                  return DaySection(
+                    title: entry.key,
+                    building: building,
+                    lessons: entry.value,
+                    accentColor: Colors.grey,
+                    weekType: weekType,
+                    showGroupInsteadOfTeacher: true,
+                  );
+                },
+              ),
+            ),
     );
   }
 }

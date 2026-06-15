@@ -9,6 +9,7 @@ class ReplacementRepository implements ReplacementRepositoryInterface {
 
   static const String _selectedGroupKey = 'selected_group';
   static const String _selectedRoleKey = 'selected_role';
+  static const String _teacherNameKey = 'teacher';
 
   /// Получить замены в расписании для конкретной группы
   @override
@@ -17,21 +18,22 @@ class ReplacementRepository implements ReplacementRepositoryInterface {
       final prefs = await SharedPreferences.getInstance();
       final role = prefs.getString(_selectedRoleKey) ?? 'student';
 
-      // Если выбрана роль преподавателя, замены для группы не загружаем.
-      if (role != 'student') {
-        return [];
+      final List changes;
+      if (role == 'student') {
+        final groupCode = await _getSelectedGroupCode();
+        if (groupCode.isEmpty) {
+          return [];
+        }
+        changes = await _changesService.parseScheduleChangesForGroup(groupCode);
+      } else {
+        final teacherName = prefs.getString(_teacherNameKey) ?? '';
+        if (teacherName.trim().isEmpty) {
+          return [];
+        }
+        changes = await _changesService.parseScheduleChangesForTeacher(
+          teacherName,
+        );
       }
-
-      // Здесь нужно получить выбранную группу из настроек
-      final groupCode = await _getSelectedGroupCode();
-
-      if (groupCode.isEmpty) {
-        return [];
-      }
-
-      final changes = await _changesService.parseScheduleChangesForGroup(
-        groupCode,
-      );
 
       // Преобразуем модели замен в сущности замен
       return changes.map((change) {
@@ -41,6 +43,7 @@ class ReplacementRepository implements ReplacementRepositoryInterface {
           replaceTo: change.replaceTo,
           updatedAt: change.updatedAt,
           changeDate: change.changeDate,
+          group: change.group,
         );
       }).toList();
     } catch (e) {

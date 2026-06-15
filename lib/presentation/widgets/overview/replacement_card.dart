@@ -16,11 +16,19 @@ class ReplacementCard extends StatelessWidget {
   /// Новый предмет (после изменения)
   final String replaceTo;
 
+  /// Группа, к которой относится изменение
+  final String group;
+
+  /// Вид карточки для преподавателя: без ФИО преподавателя и старой пары.
+  final bool teacherView;
+
   const ReplacementCard({
     super.key,
     required this.lessonNumber,
     required this.replaceFrom,
     required this.replaceTo,
+    this.group = '',
+    this.teacherView = false,
   });
 
   @override
@@ -38,7 +46,8 @@ class ReplacementCard extends StatelessWidget {
     final LessonDetails previousLessonDetails = parseLessonDetails(
       sanitizedReplaceFrom,
     );
-    final bool hasPreviousLesson = previousLessonDetails.hasData;
+    final bool hasPreviousLesson =
+        !teacherView && previousLessonDetails.hasData;
 
     final bool isAdditionalClass =
         sanitizedReplaceFrom.isEmpty ||
@@ -49,18 +58,29 @@ class ReplacementCard extends StatelessWidget {
         ? const Color(0xFFFF8C00).withValues(alpha: 0.5)
         : const Color(0xFFFF8C00);
 
-    final String subjectText = newLessonDetails.subject.isNotEmpty
-        ? newLessonDetails.subject
-        : (isAdditionalClass
-              ? 'Дополнительное занятие'
-              : 'Замена в расписании');
+    final String subjectText = teacherView
+        ? _teacherTitle(sanitizedReplaceTo, newLessonDetails)
+        : (newLessonDetails.subject.isNotEmpty
+              ? newLessonDetails.subject
+              : (isAdditionalClass
+                    ? 'Дополнительное занятие'
+                    : 'Замена в расписании'));
+    final String subtitleText = teacherView
+        ? _cleanGroupLabel(group)
+        : _studentSubtitle(newLessonDetails);
 
     final bg = cs.surface;
-    final borderColor = isDark ? const Color(0xFF333333) : Colors.black.withValues(alpha: 0.06);
-    final shadowColor = isDark ? Colors.black.withValues(alpha: 0.5) : Colors.black.withValues(alpha: 0.04);
-    
+    final borderColor = isDark
+        ? const Color(0xFF333333)
+        : Colors.black.withValues(alpha: 0.06);
+    final shadowColor = isDark
+        ? Colors.black.withValues(alpha: 0.5)
+        : Colors.black.withValues(alpha: 0.04);
+
     final titleColor = isDark ? Colors.white : Colors.black87;
-    final subColor = isDark ? Colors.white.withValues(alpha: 0.7) : Colors.black54;
+    final subColor = isDark
+        ? Colors.white.withValues(alpha: 0.7)
+        : Colors.black54;
 
     return Container(
       decoration: BoxDecoration(
@@ -100,9 +120,9 @@ class ReplacementCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      if (newLessonDetails.teacher.isNotEmpty)
+                      if (subtitleText.isNotEmpty)
                         Text(
-                          newLessonDetails.teacher,
+                          subtitleText,
                           style: TextStyle(
                             fontSize: 12,
                             color: isAdditionalClass
@@ -128,10 +148,7 @@ class ReplacementCard extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       lessonTimes.end,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: subColor,
-                      ),
+                      style: TextStyle(fontSize: 12, color: subColor),
                     ),
                   ],
                 ),
@@ -145,6 +162,52 @@ class ReplacementCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _studentSubtitle(LessonDetails details) {
+    if (details.teacher.isNotEmpty && group.isNotEmpty) {
+      return '${details.teacher} • $group';
+    }
+    if (details.teacher.isNotEmpty) return details.teacher;
+    return group;
+  }
+
+  String _teacherTitle(String replaceTo, LessonDetails details) {
+    final normalized = replaceTo.toLowerCase();
+    if (normalized.startsWith('занятие отменено')) {
+      return 'Занятие отменено';
+    }
+    if (normalized.startsWith('занятие перенесено')) {
+      return _firstMeaningfulLine(replaceTo);
+    }
+    if (normalized.startsWith('дополнительное занятие')) {
+      final withoutPrefix = replaceTo
+          .replaceFirst(
+            RegExp(r'^дополнительное занятие[:\s-]*', caseSensitive: false),
+            '',
+          )
+          .trim();
+      final parsed = parseLessonDetails(withoutPrefix);
+      if (parsed.subject.isNotEmpty) return parsed.subject;
+      return 'Дополнительное занятие';
+    }
+    if (details.subject.isNotEmpty) return details.subject;
+    return 'Замена в расписании';
+  }
+
+  String _firstMeaningfulLine(String value) {
+    final lines = value
+        .split(RegExp(r'[\r\n]+'))
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .toList();
+    return lines.isEmpty ? value.trim() : lines.first;
+  }
+
+  String _cleanGroupLabel(String value) {
+    return value
+        .replaceAll(RegExp(r'^\s*группа\s*[:\-]?\s*', caseSensitive: false), '')
+        .trim();
   }
 }
 
@@ -198,7 +261,9 @@ class _PreviousLessonInfo extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final color = isDark ? Colors.white.withValues(alpha: 0.5) : Colors.black45;
-    final colorSub = isDark ? Colors.white.withValues(alpha: 0.4) : Colors.black38;
+    final colorSub = isDark
+        ? Colors.white.withValues(alpha: 0.4)
+        : Colors.black38;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
