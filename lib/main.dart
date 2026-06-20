@@ -24,30 +24,35 @@ import 'package:my_mpt/presentation/screens/settings_screen.dart';
 import 'package:my_mpt/presentation/screens/welcome_screen.dart';
 
 Future<void> main() async {
-  runZonedGuarded(() async {
-    WidgetsFlutterBinding.ensureInitialized();
+  runZonedGuarded(
+    () async {
+      WidgetsFlutterBinding.ensureInitialized();
 
-    // Инициализируем Firebase
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+      // Инициализируем Firebase
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
 
-    if (!kIsWeb) {
-      FcmFirestoreService.registerBackgroundHandler();
-      final notificationService = NotificationService();
-      await notificationService.initialize();
-      final fcmService = FcmFirestoreService();
-      await fcmService.initialize();
-      await fcmService.syncTokenWithGroup();
-    }
+      if (!kIsWeb) {
+        FcmFirestoreService.registerBackgroundHandler();
+        final notificationService = NotificationService();
+        await notificationService.initialize();
+        final fcmService = FcmFirestoreService();
+        await fcmService.initialize();
+        await fcmService.syncTokenWithGroup();
+      }
 
-    await AppThemeService.init();
+      await AppThemeService.init();
 
-    runApp(const MyApp());
-  }, (e, st) {
-    if (kDebugMode) {
-      print('Uncaught error: $e');
-      print(st);
-    }
-  });
+      runApp(const MyApp());
+    },
+    (e, st) {
+      if (kDebugMode) {
+        print('Uncaught error: $e');
+        print(st);
+      }
+    },
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -66,9 +71,9 @@ class MyApp extends StatelessWidget {
         surface: Color(0xFF111111),
       ),
       textTheme: ThemeData.dark().textTheme.apply(
-            bodyColor: Colors.white,
-            displayColor: Colors.white,
-          ),
+        bodyColor: Colors.white,
+        displayColor: Colors.white,
+      ),
       appBarTheme: const AppBarTheme(
         foregroundColor: Colors.white,
         elevation: 0,
@@ -81,15 +86,21 @@ class MyApp extends StatelessWidget {
         elevation: 0,
         iconTheme: WidgetStateProperty.resolveWith(
           (states) => IconThemeData(
-            color: states.contains(WidgetState.selected) ? Colors.white : Colors.white70,
+            color: states.contains(WidgetState.selected)
+                ? Colors.white
+                : Colors.white70,
           ),
         ),
         labelTextStyle: WidgetStateProperty.resolveWith(
           (states) => TextStyle(
             fontSize: 11,
-            fontWeight: states.contains(WidgetState.selected) ? FontWeight.w600 : FontWeight.w500,
+            fontWeight: states.contains(WidgetState.selected)
+                ? FontWeight.w600
+                : FontWeight.w500,
             letterSpacing: 0.1,
-            color: states.contains(WidgetState.selected) ? Colors.white : Colors.white60,
+            color: states.contains(WidgetState.selected)
+                ? Colors.white
+                : Colors.white60,
           ),
         ),
       ),
@@ -101,19 +112,23 @@ class MyApp extends StatelessWidget {
       primary: Color(0xFFFF8C00),
       secondary: Color(0xFFFFA500),
       tertiary: Color(0xFFFFB347),
-      surface: Color(0xFFF5F5F5), // Сопоставляем 0xFF111111 из темной с 0xFFF5F5F5 в светлой
+      surface: Color(
+        0xFFF5F5F5,
+      ), // Сопоставляем 0xFF111111 из темной с 0xFFF5F5F5 в светлой
     );
 
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
       fontFamily: 'Roboto',
-      scaffoldBackgroundColor: const Color(0xFFFFFFFF), // Сопоставляем 0xFF000000 из темной с 0xFFFFFFFF в светлой
+      scaffoldBackgroundColor: const Color(
+        0xFFFFFFFF,
+      ), // Сопоставляем 0xFF000000 из темной с 0xFFFFFFFF в светлой
       colorScheme: cs,
       textTheme: ThemeData.light().textTheme.apply(
-            bodyColor: Colors.black87,
-            displayColor: Colors.black87,
-          ),
+        bodyColor: Colors.black87,
+        displayColor: Colors.black87,
+      ),
       appBarTheme: const AppBarTheme(
         foregroundColor: Colors.black87,
         elevation: 0,
@@ -165,6 +180,108 @@ class _NavItemData {
   });
 }
 
+/// Keeps the expensive iOS platform view alive when an unrelated part of the
+/// main scaffold rebuilds (for example, the overview page indicator).
+class _StableNativeNavBar extends StatefulWidget {
+  final int currentIndex;
+  final Color tintColor;
+  final ValueChanged<int> onTap;
+  final List<_NavItemData> items;
+
+  const _StableNativeNavBar({
+    required this.currentIndex,
+    required this.tintColor,
+    required this.onTap,
+    required this.items,
+  });
+
+  @override
+  State<_StableNativeNavBar> createState() => _StableNativeNavBarState();
+}
+
+class _StableNativeNavBarState extends State<_StableNativeNavBar> {
+  Widget? _cachedNavBar;
+  int? _cachedIndex;
+  Color? _cachedTintColor;
+  Brightness? _cachedBrightness;
+
+  @override
+  Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    if (_cachedNavBar == null ||
+        _cachedIndex != widget.currentIndex ||
+        _cachedTintColor != widget.tintColor ||
+        _cachedBrightness != brightness) {
+      _cachedIndex = widget.currentIndex;
+      _cachedTintColor = widget.tintColor;
+      _cachedBrightness = brightness;
+      _cachedNavBar = NativeGlassNavBar(
+        currentIndex: widget.currentIndex,
+        tintColor: widget.tintColor,
+        onTap: widget.onTap,
+        fallback: CupertinoTabBar(
+          currentIndex: widget.currentIndex,
+          onTap: widget.onTap,
+          activeColor: widget.tintColor,
+          inactiveColor: CupertinoDynamicColor.resolve(
+            CupertinoColors.inactiveGray,
+            context,
+          ),
+          backgroundColor: CupertinoDynamicColor.resolve(
+            CupertinoColors.systemGrey6,
+            context,
+          ),
+          border: Border(
+            top: BorderSide(
+              color: CupertinoDynamicColor.resolve(
+                CupertinoColors.separator,
+                context,
+              ),
+              width: 0,
+            ),
+          ),
+          items: [
+            for (final item in widget.items)
+              BottomNavigationBarItem(
+                icon: Icon(item.icon),
+                activeIcon: Icon(item.selectedIcon),
+                label: item.label,
+              ),
+          ],
+        ),
+        tabs: [
+          for (final item in widget.items)
+            NativeGlassNavBarItem(label: item.label, symbol: item.sfSymbol),
+        ],
+      );
+    }
+    return _cachedNavBar!;
+  }
+}
+
+/// Retains an already visited page and its raster cache while it is outside
+/// the PageView viewport. This avoids rebuilding data-heavy screens mid-swipe.
+class _KeepAlivePage extends StatefulWidget {
+  final Widget child;
+
+  const _KeepAlivePage({required this.child});
+
+  @override
+  State<_KeepAlivePage> createState() => _KeepAlivePageState();
+}
+
+class _KeepAlivePageState extends State<_KeepAlivePage>
+    with AutomaticKeepAliveClientMixin<_KeepAlivePage> {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return RepaintBoundary(child: widget.child);
+  }
+}
+
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
@@ -175,17 +292,20 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
   late final PageController _pageController;
+  bool _isModalSheetVisible = false;
 
   bool _isFirstLaunch = true;
   bool _isLoading = true;
   bool _updateChecked = false;
 
   late final List<Widget> _screens = <Widget>[
-    RepaintBoundary(child: OverviewScreen(forcedPage: 0)),
-    RepaintBoundary(child: OverviewScreen(forcedPage: 1)),
-    const RepaintBoundary(child: ScheduleScreen()),
-    const RepaintBoundary(child: CallsScreen()),
-    const RepaintBoundary(child: SettingsScreen()),
+    const _KeepAlivePage(child: OverviewScreen(forcedPage: 0)),
+    const _KeepAlivePage(child: OverviewScreen(forcedPage: 1)),
+    const _KeepAlivePage(child: ScheduleScreen()),
+    const _KeepAlivePage(child: CallsScreen()),
+    _KeepAlivePage(
+      child: SettingsScreen(onModalVisibilityChanged: _setModalSheetVisibility),
+    ),
   ];
 
   final List<_NavItemData> _navItems = const [
@@ -250,6 +370,11 @@ class _MainScreenState extends State<MainScreen> {
     setState(() => _currentIndex = index);
   }
 
+  void _setModalSheetVisibility(bool isVisible) {
+    if (!mounted || _isModalSheetVisible == isVisible) return;
+    setState(() => _isModalSheetVisible = isVisible);
+  }
+
   @override
   void dispose() {
     _pageController.dispose();
@@ -260,7 +385,11 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        body: Center(child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary)),
+        body: Center(
+          child: CircularProgressIndicator(
+            color: Theme.of(context).colorScheme.primary,
+          ),
+        ),
       );
     }
 
@@ -290,9 +419,11 @@ class _MainScreenState extends State<MainScreen> {
       }
     }
 
-    final isNumerator = DateFormatter.getWeekType(DateTime.now()) == 'Числитель';
-    final Color activeColor =
-        isNumerator ? const Color(0xFFFF8C00) : const Color(0xFF42A5F5);
+    final isNumerator =
+        DateFormatter.getWeekType(DateTime.now()) == 'Числитель';
+    final Color activeColor = isNumerator
+        ? const Color(0xFFFF8C00)
+        : const Color(0xFF42A5F5);
 
     final bool isIOS = !kIsWeb && Platform.isIOS;
     final double indicatorBottomOffset = isIOS ? 60 : (80 + 10);
@@ -301,49 +432,26 @@ class _MainScreenState extends State<MainScreen> {
     Widget? bottomNavigationBar;
 
     if (isIOS) {
-      bottomNavigationBar = NativeGlassNavBar(
-        currentIndex: selectedNavIndex,
-        tintColor: activeColor,
-        onTap: handleNavTap,
-        fallback: CupertinoTabBar(
+      if (!_isModalSheetVisible) {
+        bottomNavigationBar = _StableNativeNavBar(
           currentIndex: selectedNavIndex,
+          tintColor: activeColor,
           onTap: handleNavTap,
-          activeColor: activeColor,
-          inactiveColor: CupertinoDynamicColor.resolve(CupertinoColors.inactiveGray, context),
-          backgroundColor: CupertinoDynamicColor.resolve(CupertinoColors.systemGrey6, context),
-          border: Border(
-            top: BorderSide(
-              color: CupertinoDynamicColor.resolve(CupertinoColors.separator, context),
-              width: 0,
-            ),
-          ),
-          items: [
-            for (final item in _navItems)
-              BottomNavigationBarItem(
-                icon: Icon(item.icon),
-                activeIcon: Icon(item.selectedIcon),
-                label: item.label,
-              ),
-          ],
-        ),
-        tabs: [
-          for (final item in _navItems)
-            NativeGlassNavBarItem(
-              label: item.label,
-              symbol: item.sfSymbol,
-            ),
-        ],
-      );
+          items: _navItems,
+        );
+      }
     } else {
       bottomNavigationBar = ClipRRect(
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         child: Theme(
           data: Theme.of(context).copyWith(
             navigationBarTheme: Theme.of(context).navigationBarTheme.copyWith(
-              indicatorColor: isDark ? activeColor.withOpacity(0.25) : activeColor.withOpacity(0.15),
+              indicatorColor: isDark
+                  ? activeColor.withOpacity(0.25)
+                  : activeColor.withOpacity(0.15),
               iconTheme: WidgetStateProperty.resolveWith(
                 (states) => IconThemeData(
-                  color: states.contains(WidgetState.selected) 
+                  color: states.contains(WidgetState.selected)
                       ? (isDark ? Colors.white : activeColor)
                       : (isDark ? Colors.white70 : Colors.black54),
                 ),
@@ -351,10 +459,12 @@ class _MainScreenState extends State<MainScreen> {
               labelTextStyle: WidgetStateProperty.resolveWith(
                 (states) => TextStyle(
                   fontSize: 11,
-                  fontWeight: states.contains(WidgetState.selected) ? FontWeight.w600 : FontWeight.w500,
+                  fontWeight: states.contains(WidgetState.selected)
+                      ? FontWeight.w600
+                      : FontWeight.w500,
                   letterSpacing: 0.1,
-                  color: states.contains(WidgetState.selected) 
-                      ? (isDark ? Colors.white : activeColor) 
+                  color: states.contains(WidgetState.selected)
+                      ? (isDark ? Colors.white : activeColor)
                       : (isDark ? Colors.white60 : Colors.black54),
                 ),
               ),
@@ -385,6 +495,7 @@ class _MainScreenState extends State<MainScreen> {
           children: [
             PageView(
               controller: _pageController,
+              allowImplicitScrolling: true,
               onPageChanged: (index) {
                 setState(() => _currentIndex = index);
               },
@@ -394,7 +505,9 @@ class _MainScreenState extends State<MainScreen> {
               Positioned(
                 left: 0,
                 right: 0,
-                bottom: MediaQuery.of(context).padding.bottom + indicatorBottomOffset,
+                bottom:
+                    MediaQuery.of(context).padding.bottom +
+                    indicatorBottomOffset,
                 child: IgnorePointer(
                   child: PageIndicator(currentPageIndex: _currentIndex),
                 ),
@@ -406,4 +519,3 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 }
-

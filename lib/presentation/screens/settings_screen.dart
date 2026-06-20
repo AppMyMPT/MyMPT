@@ -24,10 +24,102 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key});
+  final ValueChanged<bool>? onModalVisibilityChanged;
+
+  const SettingsScreen({super.key, this.onModalVisibilityChanged});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _DraggableAboutSheet extends StatefulWidget {
+  final Color backgroundColor;
+  final Widget child;
+
+  const _DraggableAboutSheet({
+    required this.backgroundColor,
+    required this.child,
+  });
+
+  @override
+  State<_DraggableAboutSheet> createState() => _DraggableAboutSheetState();
+}
+
+class _DraggableAboutSheetState extends State<_DraggableAboutSheet> {
+  static const double _initialFraction = 0.38;
+  static const double _minimumFraction = 0.20;
+  static const double _maximumFraction = 0.92;
+
+  double _fraction = _initialFraction;
+  bool _isDragging = false;
+
+  void _handleDragUpdate(DragUpdateDetails details, double availableHeight) {
+    setState(() {
+      _fraction = (_fraction - details.delta.dy / availableHeight).clamp(
+        _minimumFraction,
+        _maximumFraction,
+      );
+    });
+  }
+
+  void _handleDragEnd(DragEndDetails details) {
+    final velocity = details.primaryVelocity ?? 0;
+    if (_fraction < 0.28 ||
+        (velocity > 1100 && _fraction <= _initialFraction)) {
+      Navigator.of(context).pop();
+      return;
+    }
+
+    setState(() {
+      _isDragging = false;
+      _fraction = _fraction > 0.58 ? _maximumFraction : _initialFraction;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final availableHeight = constraints.maxHeight;
+        return Align(
+          alignment: Alignment.bottomCenter,
+          child: AnimatedContainer(
+            duration: _isDragging
+                ? Duration.zero
+                : const Duration(milliseconds: 240),
+            curve: Curves.easeOutCubic,
+            width: double.infinity,
+            height: availableHeight * _fraction,
+            decoration: BoxDecoration(
+              color: widget.backgroundColor,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(28),
+              ),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onVerticalDragStart: (_) => setState(() => _isDragging = true),
+              onVerticalDragUpdate: (details) =>
+                  _handleDragUpdate(details, availableHeight),
+              onVerticalDragEnd: _handleDragEnd,
+              child: ClipRect(
+                child: OverflowBox(
+                  alignment: Alignment.topCenter,
+                  minHeight: 0,
+                  maxHeight: double.infinity,
+                  child: SizedBox(
+                    width: constraints.maxWidth,
+                    child: widget.child,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
@@ -95,7 +187,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       HapticFeedback.lightImpact();
     }
   }
-  
+
   Future<void> _triggerSuccessHaptic() async {
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
       await HapticFeedback.lightImpact();
@@ -157,7 +249,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      showErrorNotification(context, 'Ошибка загрузки', 'Не удалось загрузить специальности', Icons.error_outline);
+      showErrorNotification(
+        context,
+        'Ошибка загрузки',
+        'Не удалось загрузить специальности',
+        Icons.error_outline,
+      );
     }
   }
 
@@ -181,7 +278,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         if (role == 'student') {
           final selectedGroupCode = prefs.getString(_selectedGroupKey);
           final selectedSpecialtyCode = prefs.getString(_selectedSpecialtyKey);
-          final selectedSpecialtyName = prefs.getString('${_selectedSpecialtyKey}_name');
+          final selectedSpecialtyName = prefs.getString(
+            '${_selectedSpecialtyKey}_name',
+          );
 
           if (selectedGroupCode != null && selectedGroupCode.isNotEmpty) {
             _selectedGroup = Group(
@@ -191,16 +290,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
             );
           }
 
-          if (selectedSpecialtyCode != null && selectedSpecialtyCode.isNotEmpty) {
-            if (selectedSpecialtyName != null && selectedSpecialtyName.isNotEmpty) {
-              _selectedSpecialty = data_model.Specialty(code: selectedSpecialtyCode, name: selectedSpecialtyName);
+          if (selectedSpecialtyCode != null &&
+              selectedSpecialtyCode.isNotEmpty) {
+            if (selectedSpecialtyName != null &&
+                selectedSpecialtyName.isNotEmpty) {
+              _selectedSpecialty = data_model.Specialty(
+                code: selectedSpecialtyCode,
+                name: selectedSpecialtyName,
+              );
             } else if (_specialties.isNotEmpty) {
               _selectedSpecialty = _specialties.firstWhere(
                 (s) => s.code == selectedSpecialtyCode,
                 orElse: () => data_model.Specialty(code: '', name: ''),
               );
             }
-            if (_selectedSpecialty != null && _selectedSpecialty!.code.isNotEmpty) {
+            if (_selectedSpecialty != null &&
+                _selectedSpecialty!.code.isNotEmpty) {
               Future.delayed(const Duration(milliseconds: 100), () {
                 if (mounted) _loadGroups(_selectedSpecialty!.code);
               });
@@ -233,13 +338,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   String _getHoursText(int hours) {
     if (hours % 10 == 1 && hours % 100 != 11) return 'час';
-    if (hours % 10 >= 2 && hours % 10 <= 4 && (hours % 100 < 10 || hours % 100 >= 20)) return 'часа';
+    if (hours % 10 >= 2 &&
+        hours % 10 <= 4 &&
+        (hours % 100 < 10 || hours % 100 >= 20))
+      return 'часа';
     return 'часов';
   }
 
   String _getMinutesText(int minutes) {
     if (minutes % 10 == 1 && minutes % 100 != 11) return 'минуту';
-    if (minutes % 10 >= 2 && minutes % 10 <= 4 && (minutes % 100 < 10 || minutes % 100 >= 20)) return 'минуты';
+    if (minutes % 10 >= 2 &&
+        minutes % 10 <= 4 &&
+        (minutes % 100 < 10 || minutes % 100 >= 20))
+      return 'минуты';
     return 'минут';
   }
 
@@ -284,7 +395,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 padding: const EdgeInsets.all(16),
                 child: Text(
                   'Тема оформления',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
                 ),
               ),
               Expanded(
@@ -339,9 +452,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _sectionTitle(String title) {
     return Text(
       title,
-      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w700,
-          ),
+      style: Theme.of(
+        context,
+      ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
     );
   }
 
@@ -364,13 +477,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (_selectedRole == 'student') {
         final selectedGroupCode = prefs.getString(_selectedGroupKey);
         if (selectedGroupCode == null || selectedGroupCode.isEmpty) {
-          if (mounted) showInfoNotification(context, 'Выберите группу', 'Сначала выберите специальность и группу', Icons.info_outline);
+          if (mounted)
+            showInfoNotification(
+              context,
+              'Выберите группу',
+              'Сначала выберите специальность и группу',
+              Icons.info_outline,
+            );
           return;
         }
       } else {
         final teacherName = prefs.getString(_teacherNameKey);
         if (teacherName == null || teacherName.isEmpty) {
-          if (mounted) showInfoNotification(context, 'Выберите преподавателя', 'Сначала выберите преподавателя', Icons.info_outline);
+          if (mounted)
+            showInfoNotification(
+              context,
+              'Выберите преподавателя',
+              'Сначала выберите преподавателя',
+              Icons.info_outline,
+            );
           return;
         }
       }
@@ -393,7 +518,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (mounted) {
         if (ok) {
           _triggerSuccessHaptic();
-          showSuccessNotification(context, 'Расписание обновлено', 'Данные успешно загружены', Icons.check_circle_outline);
+          showSuccessNotification(
+            context,
+            'Расписание обновлено',
+            'Данные успешно загружены',
+            Icons.check_circle_outline,
+          );
         } else {
           final reason = _repository.lastFailureReason;
           if (reason == ScheduleRefreshFailureReason.selectionNotChosen) {
@@ -437,7 +567,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         }
       }
     } catch (_) {
-      if (mounted) showErrorNotification(context, 'Ошибка обновления', 'Не удалось обновить расписание', Icons.error_outline);
+      if (mounted)
+        showErrorNotification(
+          context,
+          'Ошибка обновления',
+          'Не удалось обновить расписание',
+          Icons.error_outline,
+        );
     } finally {
       sw.stop();
       _refreshTimer?.cancel();
@@ -470,14 +606,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (mounted) setState(() {});
 
       await _repository.refreshAllDataWithStatus(forceRefresh: true);
-      _repository.dataUpdatedNotifier.value = !_repository.dataUpdatedNotifier.value;
+      _repository.dataUpdatedNotifier.value =
+          !_repository.dataUpdatedNotifier.value;
 
       if (mounted) {
         _triggerSuccessHaptic();
-        showSuccessNotification(context, 'Версия изменена', fromToChange, Icons.check_circle_outline);
+        showSuccessNotification(
+          context,
+          'Версия изменена',
+          fromToChange,
+          Icons.check_circle_outline,
+        );
       }
     } catch (e) {
-      if (mounted) showErrorNotification(context, 'Ошибка', 'Не удалось сменить версию', Icons.error_outline);
+      if (mounted)
+        showErrorNotification(
+          context,
+          'Ошибка',
+          'Не удалось сменить версию',
+          Icons.error_outline,
+        );
     }
   }
 
@@ -516,7 +664,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      showErrorNotification(context, 'Ошибка загрузки', 'Не удалось загрузить группы', Icons.error_outline);
+      showErrorNotification(
+        context,
+        'Ошибка загрузки',
+        'Не удалось загрузить группы',
+        Icons.error_outline,
+      );
     }
   }
 
@@ -554,7 +707,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      showErrorNotification(context, 'Ошибка', 'Не удалось загрузить преподавателей', Icons.error_outline);
+      showErrorNotification(
+        context,
+        'Ошибка',
+        'Не удалось загрузить преподавателей',
+        Icons.error_outline,
+      );
     }
   }
 
@@ -580,10 +738,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_selectedGroupKey, group.code);
       await prefs.setString(_selectedSpecialtyKey, group.specialtyCode);
-      await prefs.setString('${_selectedSpecialtyKey}_name', group.specialtyName);
+      await prefs.setString(
+        '${_selectedSpecialtyKey}_name',
+        group.specialtyName,
+      );
 
       try {
-        final ok = await _repository.refreshAllDataWithStatus(forceRefresh: true);
+        final ok = await _repository.refreshAllDataWithStatus(
+          forceRefresh: true,
+        );
         final lastUpdateIso = prefs.getString('schedule_cache_last_update');
 
         if (!mounted) return;
@@ -596,7 +759,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           setState(() => _lastUpdate = _repository.lastUpdate);
         }
 
-        if (ok) _repository.dataUpdatedNotifier.value = !_repository.dataUpdatedNotifier.value;
+        if (ok)
+          _repository.dataUpdatedNotifier.value =
+              !_repository.dataUpdatedNotifier.value;
         try {
           await FcmFirestoreService().syncTokenWithGroup();
         } catch (_) {}
@@ -604,7 +769,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
         if (mounted) {
           if (ok) {
             _triggerSuccessHaptic();
-            showSuccessNotification(context, 'Группа выбрана', 'Выбрана группа ${group.code}. Расписание обновлено.', Icons.check_circle_outline);
+            showSuccessNotification(
+              context,
+              'Группа выбрана',
+              'Выбрана группа ${group.code}. Расписание обновлено.',
+              Icons.check_circle_outline,
+            );
           } else {
             final reason = _repository.lastFailureReason;
             if (reason == ScheduleRefreshFailureReason.sourceUnavailable) {
@@ -632,10 +802,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
           }
         }
       } catch (_) {
-        if (mounted) showErrorNotification(context, 'Ошибка', 'Не удалось обновить расписание.', Icons.warning);
+        if (mounted)
+          showErrorNotification(
+            context,
+            'Ошибка',
+            'Не удалось обновить расписание.',
+            Icons.warning,
+          );
       }
     } catch (_) {
-      if (mounted) showErrorNotification(context, 'Ошибка', 'Произошла ошибка при выборе группы.', Icons.error_outline);
+      if (mounted)
+        showErrorNotification(
+          context,
+          'Ошибка',
+          'Произошла ошибка при выборе группы.',
+          Icons.error_outline,
+        );
     }
   }
 
@@ -648,13 +830,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await prefs.setString(_teacherNameKey, teacher.teacherName);
 
       try {
-        final ok = await _repository.refreshAllDataWithStatus(forceRefresh: true);
-        if (ok) _repository.dataUpdatedNotifier.value = !_repository.dataUpdatedNotifier.value;
+        final ok = await _repository.refreshAllDataWithStatus(
+          forceRefresh: true,
+        );
+        if (ok)
+          _repository.dataUpdatedNotifier.value =
+              !_repository.dataUpdatedNotifier.value;
 
         if (mounted) {
           if (ok) {
             _triggerSuccessHaptic();
-            showSuccessNotification(context, 'Преподаватель выбран', '${teacher.teacherName} • Расписание обновлено', Icons.check_circle_outline);
+            showSuccessNotification(
+              context,
+              'Преподаватель выбран',
+              '${teacher.teacherName} • Расписание обновлено',
+              Icons.check_circle_outline,
+            );
           } else {
             final reason = _repository.lastFailureReason;
             if (reason == ScheduleRefreshFailureReason.sourceUnavailable) {
@@ -682,10 +873,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
           }
         }
       } catch (_) {
-        if (mounted) showErrorNotification(context, 'Ошибка', 'Не удалось обновить расписание.', Icons.warning);
+        if (mounted)
+          showErrorNotification(
+            context,
+            'Ошибка',
+            'Не удалось обновить расписание.',
+            Icons.warning,
+          );
       }
     } catch (_) {
-      if (mounted) showErrorNotification(context, 'Ошибка', 'Произошла ошибка при выборе преподавателя.', Icons.error_outline);
+      if (mounted)
+        showErrorNotification(
+          context,
+          'Ошибка',
+          'Произошла ошибка при выборе преподавателя.',
+          Icons.error_outline,
+        );
     }
   }
 
@@ -696,11 +899,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
         'Если вы видите это, локальные уведомления работают успешно!',
       );
       if (mounted) {
-        showSuccessNotification(context, 'Успешно', 'Тестовое уведомление отправлено', Icons.notifications_active);
+        showSuccessNotification(
+          context,
+          'Успешно',
+          'Тестовое уведомление отправлено',
+          Icons.notifications_active,
+        );
       }
     } catch (e) {
       if (mounted) {
-        showErrorNotification(context, 'Ошибка', 'Не удалось отправить уведомление: $e', Icons.error_outline);
+        showErrorNotification(
+          context,
+          'Ошибка',
+          'Не удалось отправить уведомление: $e',
+          Icons.error_outline,
+        );
       }
     }
   }
@@ -712,19 +925,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
         await Clipboard.setData(ClipboardData(text: token));
         if (mounted) {
           showSuccessNotification(
-              context,
-              'FCM Токен скопирован',
-              'Вставьте его в Firebase Console для тестовой отправки Push-уведомления',
-              Icons.copy);
+            context,
+            'FCM Токен скопирован',
+            'Вставьте его в Firebase Console для тестовой отправки Push-уведомления',
+            Icons.copy,
+          );
         }
       } else {
         if (mounted) {
-          showErrorNotification(context, 'Ошибка', 'FCM токен недоступен или пуст', Icons.error_outline);
+          showErrorNotification(
+            context,
+            'Ошибка',
+            'FCM токен недоступен или пуст',
+            Icons.error_outline,
+          );
         }
       }
     } catch (e) {
       if (mounted) {
-        showErrorNotification(context, 'Ошибка', 'Ошибка получения токена: $e', Icons.error_outline);
+        showErrorNotification(
+          context,
+          'Ошибка',
+          'Ошибка получения токена: $e',
+          Icons.error_outline,
+        );
       }
     }
   }
@@ -751,7 +975,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 14),
                 SettingsCard(
                   title: 'Выберите свою специальность',
-                  subtitle: _selectedSpecialty?.name ?? 'Специальность не выбрана',
+                  subtitle:
+                      _selectedSpecialty?.name ?? 'Специальность не выбрана',
                   icon: Icons.book_outlined,
                   onTap: _showSpecialtySelector,
                 ),
@@ -774,7 +999,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 14),
                 SettingsCard(
                   title: 'Выберите преподавателя',
-                  subtitle: _selectedTeacher?.teacherName ?? 'Преподаватель не выбран',
+                  subtitle:
+                      _selectedTeacher?.teacherName ??
+                      'Преподаватель не выбран',
                   icon: Icons.person_outline,
                   onTap: _showTeacherSelector,
                 ),
@@ -790,7 +1017,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _sectionTitle('Расписание'),
               const SizedBox(height: 14),
               SettingsCard(
-                title: _isRefreshing ? 'Обновление… ${_formatElapsed(_refreshElapsed)}' : 'Обновить расписание',
+                title: _isRefreshing
+                    ? 'Обновление… ${_formatElapsed(_refreshElapsed)}'
+                    : 'Обновить расписание',
                 subtitle: _getLastUpdateText(),
                 icon: Icons.refresh,
                 onTap: _refreshSchedule,
@@ -847,8 +1076,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   child: ListTile(
                     leading: Icon(Icons.info_outline, color: cs.onSurface),
-                    title: Text('О приложении', style: TextStyle(color: cs.onSurface, fontWeight: FontWeight.w600)),
-                    trailing: Icon(Icons.arrow_forward_ios, size: 16, color: cs.onSurfaceVariant),
+                    title: Text(
+                      'О приложении',
+                      style: TextStyle(
+                        color: cs.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    trailing: Icon(
+                      Icons.arrow_forward_ios,
+                      size: 16,
+                      color: cs.onSurfaceVariant,
+                    ),
                   ),
                 ),
               ),
@@ -859,130 +1098,154 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showAboutDialog() {
+  Future<void> _showAboutDialog() async {
     final cs = Theme.of(context).colorScheme;
 
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (BuildContext context) {
-        final mediaQuery = MediaQuery.of(context);
-        final bottomPadding = mediaQuery.padding.bottom;
-        final maxSheetHeight = mediaQuery.size.height * 0.64;
-        final sheetHeight = maxSheetHeight < 390
-            ? maxSheetHeight
-            : (mediaQuery.size.height * 0.52).clamp(390.0, maxSheetHeight).toDouble();
+    widget.onModalVisibilityChanged?.call(true);
+    try {
+      await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        useSafeArea: false,
+        enableDrag: false,
+        backgroundColor: Colors.transparent,
+        builder: (BuildContext context) {
+          final mediaQuery = MediaQuery.of(context);
+          final bottomPadding = mediaQuery.padding.bottom;
 
-        Widget infoTile({
-          required IconData icon,
-          required String title,
-          required String subtitle,
-        }) {
-          return Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: cs.onSurface.withValues(alpha: 0.045),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: cs.onSurface.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(14),
+          Widget infoTile({
+            required IconData icon,
+            required String title,
+            required String subtitle,
+          }) {
+            return Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: cs.onSurface.withValues(alpha: 0.045),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: cs.onSurface.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Icon(icon, color: cs.onSurface, size: 20),
                   ),
-                  child: Icon(icon, color: cs.onSurface, size: 20),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(title, style: TextStyle(color: cs.onSurface, fontWeight: FontWeight.w700)),
-                      const SizedBox(height: 4),
-                      Text(
-                        subtitle,
-                        style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13, height: 1.25),
-                      ),
-                    ],
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: TextStyle(
+                            color: cs.onSurface,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          subtitle,
+                          style: TextStyle(
+                            color: cs.onSurfaceVariant,
+                            fontSize: 13,
+                            height: 1.25,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-          );
-        }
+                ],
+              ),
+            );
+          }
 
-        return Container(
-          height: sheetHeight,
-          padding: EdgeInsets.fromLTRB(20, 12, 20, 20 + bottomPadding),
-          decoration: BoxDecoration(
-            color: cs.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          ),
-          child: Column(
-            children: [
-              Container(
-                width: 42,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: cs.onSurface.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 18),
-              Container(
-                width: 64,
-                height: 64,
-                clipBehavior: Clip.antiAlias,
-                decoration: BoxDecoration(
-                  color: cs.onSurface.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Image.asset('docs/icons/icon.png', fit: BoxFit.cover),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Мой МПТ',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+          return _DraggableAboutSheet(
+            backgroundColor: cs.surface,
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(20, 12, 20, 20 + bottomPadding),
+              child: Column(
+                children: [
+                  Container(
+                    width: 42,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: cs.onSurface.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Container(
+                    width: 64,
+                    height: 64,
+                    clipBehavior: Clip.antiAlias,
+                    decoration: BoxDecoration(
+                      color: cs.onSurface.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Image.asset(
+                      'docs/icons/icon.png',
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Мой МПТ',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       color: cs.onSurface,
                       fontWeight: FontWeight.w800,
                     ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Версия $_appVersion',
-                style: TextStyle(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Лицензия: GNU GPL V3',
-                style: TextStyle(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600, fontSize: 13),
-              ),
-              const SizedBox(height: 14),
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Версия $_appVersion',
+                    style: TextStyle(
+                      color: cs.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Лицензия: GNU GPL V3',
+                    style: TextStyle(
+                      color: cs.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
                         'Мобильное приложение для студентов и преподавателей Московского приборостроительного техникума.',
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600, height: 1.35),
+                        style: TextStyle(
+                          color: cs.onSurfaceVariant,
+                          fontWeight: FontWeight.w600,
+                          height: 1.35,
+                        ),
                       ),
                       const SizedBox(height: 18),
                       Text(
                         'Разработчики',
-                        style: TextStyle(color: cs.onSurface, fontSize: 17, fontWeight: FontWeight.w800),
+                        style: TextStyle(
+                          color: cs.onSurface,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                       const SizedBox(height: 12),
                       infoTile(
                         icon: Icons.groups_outlined,
                         title: 'Студенты группы П50-1-22',
-                        subtitle: 'Себежко Александр Андреевич\nСимернин Матвей Александрович',
+                        subtitle:
+                            'Себежко Александр Андреевич\nСимернин Матвей Александрович',
                       ),
                       const SizedBox(height: 10),
                       infoTile(
@@ -992,19 +1255,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ],
                   ),
-                ),
+                ],
               ),
-            ],
-          ),
-        );
-      },
-    );
+            ),
+          );
+        },
+      );
+    } finally {
+      widget.onModalVisibilityChanged?.call(false);
+    }
   }
 
   Future<void> _openSupportLink() async {
     final Uri supportUri = Uri.parse('https://telegram.me/MptSupportBot');
     if (!await launchUrl(supportUri)) {
-      if (mounted) showErrorNotification(context, 'Ошибка', 'Не удалось открыть ссылку поддержки', Icons.error_outline);
+      if (mounted)
+        showErrorNotification(
+          context,
+          'Ошибка',
+          'Не удалось открыть ссылку поддержки',
+          Icons.error_outline,
+        );
     }
   }
 
@@ -1036,15 +1307,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 padding: const EdgeInsets.all(16),
                 child: Text(
                   'Выберите специальность',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
               ),
               Expanded(
                 child: _isLoading
                     ? Center(
-                        child: CircularProgressIndicator(
-                          color: cs.onSurface,
-                        ),
+                        child: CircularProgressIndicator(color: cs.onSurface),
                       )
                     : ListView.builder(
                         itemCount: _specialties.length,
@@ -1096,32 +1367,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 padding: const EdgeInsets.all(16),
                 child: Text(
                   'Выберите группу',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
               ),
               Expanded(
                 child: _isLoading
                     ? Center(
-                        child: CircularProgressIndicator(
-                          color: cs.onSurface,
-                        ),
+                        child: CircularProgressIndicator(color: cs.onSurface),
                       )
                     : _groups.isEmpty
-                        ? Center(child: Text('Группы не найдены', style: TextStyle(color: cs.onSurfaceVariant)))
-                        : ListView.builder(
-                            itemCount: _groups.length,
-                            itemBuilder: (context, index) {
-                              final group = _groups[index];
-                              return ListTile(
-                                title: Text(group.code),
-                                onTap: () {
-                                  _triggerHaptic();
-                                  Navigator.pop(context);
-                                  _onGroupSelected(group);
-                                },
-                              );
+                    ? Center(
+                        child: Text(
+                          'Группы не найдены',
+                          style: TextStyle(color: cs.onSurfaceVariant),
+                        ),
+                      )
+                    : ListView.builder(
+                        itemCount: _groups.length,
+                        itemBuilder: (context, index) {
+                          final group = _groups[index];
+                          return ListTile(
+                            title: Text(group.code),
+                            onTap: () {
+                              _triggerHaptic();
+                              Navigator.pop(context);
+                              _onGroupSelected(group);
                             },
-                          ),
+                          );
+                        },
+                      ),
               ),
             ],
           ),
@@ -1146,7 +1422,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final screenHeight = mediaQuery.size.height;
         final keyboardInset = mediaQuery.viewInsets.bottom;
         final topSafeMargin = mediaQuery.padding.top + 48.0;
-        final baseSheetHeight = (screenHeight * 0.62).clamp(420.0, 620.0).toDouble();
+        final baseSheetHeight = (screenHeight * 0.62)
+            .clamp(420.0, 620.0)
+            .toDouble();
         final maxSheetHeight = screenHeight - topSafeMargin;
         final availableHeight = screenHeight - keyboardInset - topSafeMargin;
         final sheetHeight = keyboardInset > 0
@@ -1172,126 +1450,146 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 height: sheetHeight.toDouble(),
                 decoration: BoxDecoration(
                   color: cs.surface,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(24),
+                  ),
                 ),
                 child: StatefulBuilder(
-            builder: (context, setModalState) {
-              final q = searchController.text.trim().toLowerCase();
-              final filteredTeachers = q.isEmpty
-                  ? _teachers
-                  : _teachers.where((t) => t.teacherName.toLowerCase().contains(q)).toList();
+                  builder: (context, setModalState) {
+                    final q = searchController.text.trim().toLowerCase();
+                    final filteredTeachers = q.isEmpty
+                        ? _teachers
+                        : _teachers
+                              .where(
+                                (t) => t.teacherName.toLowerCase().contains(q),
+                              )
+                              .toList();
 
-              return Column(
-                children: [
-                  Container(
-                    margin: const EdgeInsets.all(16),
-                    height: 4,
-                    width: 40,
-                    decoration: BoxDecoration(
-                      color: cs.onSurface.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  GestureDetector(
-                    behavior: HitTestBehavior.translucent,
-                    onVerticalDragEnd: (details) {
-                      if ((details.primaryVelocity ?? 0) > 700) {
-                        Navigator.of(context).pop();
-                      }
-                    },
-                    child: const SizedBox(height: 8, width: double.infinity),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-                    child: Text(
-                      'Выберите преподавателя',
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleLarge
-                          ?.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                    child: Center(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 340),
-                        child: SizedBox(
-                          height: 44,
-                          child: TextField(
-                            controller: searchController,
-                            focusNode: searchFocusNode,
-                            onChanged: (_) => setModalState(() {}),
-                            onSubmitted: (_) {
-                              setModalState(() {});
-                              searchFocusNode.unfocus();
-                            },
-                            textInputAction: TextInputAction.search,
-                            style: TextStyle(color: cs.onSurface),
-                            cursorColor: cs.onSurface,
-                            decoration: InputDecoration(
-                              hintText: 'Поиск',
-                              hintStyle: TextStyle(color: cs.onSurfaceVariant),
-                              prefixIcon: Icon(
-                                Icons.search,
-                                size: 20,
-                                color: cs.onSurfaceVariant,
-                              ),
-                              filled: true,
-                              fillColor: cs.onSurface.withValues(alpha: 0.04),
-                              isDense: true,
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(18),
-                                borderSide: BorderSide(
-                                  color: cs.onSurface.withValues(alpha: 0.08),
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(18),
-                                borderSide: BorderSide(
-                                  color: cs.onSurface.withValues(alpha: 0.16),
+                    return Column(
+                      children: [
+                        Container(
+                          margin: const EdgeInsets.all(16),
+                          height: 4,
+                          width: 40,
+                          decoration: BoxDecoration(
+                            color: cs.onSurface.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                        GestureDetector(
+                          behavior: HitTestBehavior.translucent,
+                          onVerticalDragEnd: (details) {
+                            if ((details.primaryVelocity ?? 0) > 700) {
+                              Navigator.of(context).pop();
+                            }
+                          },
+                          child: const SizedBox(
+                            height: 8,
+                            width: double.infinity,
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                          child: Text(
+                            'Выберите преподавателя',
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                          child: Center(
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 340),
+                              child: SizedBox(
+                                height: 44,
+                                child: TextField(
+                                  controller: searchController,
+                                  focusNode: searchFocusNode,
+                                  onChanged: (_) => setModalState(() {}),
+                                  onSubmitted: (_) {
+                                    setModalState(() {});
+                                    searchFocusNode.unfocus();
+                                  },
+                                  textInputAction: TextInputAction.search,
+                                  style: TextStyle(color: cs.onSurface),
+                                  cursorColor: cs.onSurface,
+                                  decoration: InputDecoration(
+                                    hintText: 'Поиск',
+                                    hintStyle: TextStyle(
+                                      color: cs.onSurfaceVariant,
+                                    ),
+                                    prefixIcon: Icon(
+                                      Icons.search,
+                                      size: 20,
+                                      color: cs.onSurfaceVariant,
+                                    ),
+                                    filled: true,
+                                    fillColor: cs.onSurface.withValues(
+                                      alpha: 0.04,
+                                    ),
+                                    isDense: true,
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 8,
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(18),
+                                      borderSide: BorderSide(
+                                        color: cs.onSurface.withValues(
+                                          alpha: 0.08,
+                                        ),
+                                      ),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(18),
+                                      borderSide: BorderSide(
+                                        color: cs.onSurface.withValues(
+                                          alpha: 0.16,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: _isLoading
-                        ? Center(
-                            child: CircularProgressIndicator(
-                              color: cs.onSurface,
-                            ),
-                          )
-                        : filteredTeachers.isEmpty
-                            ? Center(
-                                child: Text(
-                                  q.isEmpty
-                                      ? 'Преподаватели не найдены'
-                                      : 'Ничего не найдено',
-                                  style: TextStyle(color: cs.onSurfaceVariant),
+                        Expanded(
+                          child: _isLoading
+                              ? Center(
+                                  child: CircularProgressIndicator(
+                                    color: cs.onSurface,
+                                  ),
+                                )
+                              : filteredTeachers.isEmpty
+                              ? Center(
+                                  child: Text(
+                                    q.isEmpty
+                                        ? 'Преподаватели не найдены'
+                                        : 'Ничего не найдено',
+                                    style: TextStyle(
+                                      color: cs.onSurfaceVariant,
+                                    ),
+                                  ),
+                                )
+                              : ListView.builder(
+                                  itemCount: filteredTeachers.length,
+                                  itemBuilder: (context, index) {
+                                    final teacher = filteredTeachers[index];
+                                    return ListTile(
+                                      title: Text(teacher.teacherName),
+                                      onTap: () {
+                                        _triggerHaptic();
+                                        Navigator.pop(context);
+                                        _onTeacherSelected(teacher);
+                                      },
+                                    );
+                                  },
                                 ),
-                              )
-                            : ListView.builder(
-                                itemCount: filteredTeachers.length,
-                                itemBuilder: (context, index) {
-                                  final teacher = filteredTeachers[index];
-                                  return ListTile(
-                                    title: Text(teacher.teacherName),
-                                    onTap: () {
-                                      _triggerHaptic();
-                                      Navigator.pop(context);
-                                      _onTeacherSelected(teacher);
-                                    },
-                                  );
-                                },
-                              ),
-                  ),
-                ],
-              );
+                        ),
+                      ],
+                    );
                   },
                 ),
               ),

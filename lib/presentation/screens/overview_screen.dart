@@ -619,7 +619,9 @@ class _OverviewScreenState extends State<OverviewScreen> {
                               ),
                             );
                           }
-                          final List<Widget> widgets = [card];
+                          final List<Widget> widgets = [
+                            RepaintBoundary(child: card),
+                          ];
 
                           if (index < scheduleWithChanges.length - 1 &&
                               scheduleWithChanges[index + 1].number.trim() !=
@@ -1067,8 +1069,8 @@ class _OverviewScreenState extends State<OverviewScreen> {
   void dispose() {
     if (widget.forcedPage == null) {
       _pageRequest.removeListener(_onExternalPageRequest);
-      pageController.dispose();
     }
+    pageController.dispose();
     if (_ownsPageRequest) _pageRequest.dispose();
     repository.dataUpdatedNotifier.removeListener(onDataUpdated);
     super.dispose();

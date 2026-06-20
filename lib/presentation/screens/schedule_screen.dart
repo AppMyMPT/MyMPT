@@ -324,6 +324,18 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 }
 
 class _HeightPinnedHeaderDelegate extends SliverPersistentHeaderDelegate {
+  static final Map<int, ImageFilter> _blurFilterCache = <int, ImageFilter>{};
+
+  static ImageFilter _cachedBlurFilter(double sigma) {
+    // Quarter-point steps keep the same visual transition while avoiding a
+    // fresh engine-side filter allocation on every scroll frame.
+    final key = (sigma * 4).round();
+    return _blurFilterCache.putIfAbsent(
+      key,
+      () => ImageFilter.blur(sigmaX: key / 4, sigmaY: key / 4),
+    );
+  }
+
   _HeightPinnedHeaderDelegate({
     required this.backgroundColor,
     required this.maxHeight,
@@ -426,10 +438,12 @@ class _HeightPinnedHeaderDelegate extends SliverPersistentHeaderDelegate {
                       child: blurSigma > 0.15
                           ? ClipRect(
                               child: BackdropFilter(
-                                filter: ImageFilter.blur(
-                                  sigmaX: blurSigma,
-                                  sigmaY: blurSigma,
-                                ),
+                                filter: isIOS
+                                    ? _cachedBlurFilter(blurSigma)
+                                    : ImageFilter.blur(
+                                        sigmaX: blurSigma,
+                                        sigmaY: blurSigma,
+                                      ),
                                 child: ColoredBox(
                                   color: backgroundColor.withAlpha(
                                     (overlayAlpha * 255).toInt(),

@@ -5,6 +5,11 @@ import 'package:flutter/material.dart';
 class StatusBarBlurOverlay extends StatelessWidget {
   const StatusBarBlurOverlay({super.key, required this.isDark});
 
+  static final ImageFilter _blurFilter = ImageFilter.blur(
+    sigmaX: 5,
+    sigmaY: 5,
+  );
+
   final bool isDark;
 
   @override
@@ -34,7 +39,7 @@ class StatusBarBlurOverlay extends StatelessWidget {
               ).createShader(bounds);
             },
             child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+              filter: _blurFilter,
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   color: overlayColor,
