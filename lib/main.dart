@@ -12,7 +12,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:my_mpt/firebase_options.dart';
 import 'package:my_mpt/core/services/fcm_firestore_service.dart';
 import 'package:my_mpt/core/services/notification_service.dart';
-import 'package:my_mpt/core/services/rustore_update_ui.dart';
+import 'package:my_mpt/core/services/app_update_ui.dart';
 import 'package:my_mpt/core/services/app_theme_service.dart';
 import 'package:my_mpt/core/utils/date_formatter.dart';
 
@@ -405,7 +405,7 @@ class _MainScreenState extends State<MainScreen> {
       _updateChecked = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!kIsWeb) {
-          RuStoreUpdateUi.checkAndRunDeferredUpdate();
+          AppUpdateUi.checkAndRunDeferredUpdate();
         }
       });
     }

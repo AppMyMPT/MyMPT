@@ -32,92 +32,50 @@ class SettingsScreen extends StatefulWidget {
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _DraggableAboutSheet extends StatefulWidget {
+class _DraggableAboutSheet extends StatelessWidget {
   final Color backgroundColor;
-  final Widget child;
+  final Widget Function(ScrollController controller) builder;
 
   const _DraggableAboutSheet({
     required this.backgroundColor,
-    required this.child,
+    required this.builder,
   });
 
   @override
-  State<_DraggableAboutSheet> createState() => _DraggableAboutSheetState();
-}
-
-class _DraggableAboutSheetState extends State<_DraggableAboutSheet> {
-  static const double _initialFraction = 0.38;
-  static const double _minimumFraction = 0.20;
-  static const double _maximumFraction = 0.92;
-
-  double _fraction = _initialFraction;
-  bool _isDragging = false;
-
-  void _handleDragUpdate(DragUpdateDetails details, double availableHeight) {
-    setState(() {
-      _fraction = (_fraction - details.delta.dy / availableHeight).clamp(
-        _minimumFraction,
-        _maximumFraction,
-      );
-    });
-  }
-
-  void _handleDragEnd(DragEndDetails details) {
-    final velocity = details.primaryVelocity ?? 0;
-    if (_fraction < 0.28 ||
-        (velocity > 1100 && _fraction <= _initialFraction)) {
-      Navigator.of(context).pop();
-      return;
-    }
-
-    setState(() {
-      _isDragging = false;
-      _fraction = _fraction > 0.58 ? _maximumFraction : _initialFraction;
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final availableHeight = constraints.maxHeight;
-        return Align(
-          alignment: Alignment.bottomCenter,
-          child: AnimatedContainer(
-            duration: _isDragging
-                ? Duration.zero
-                : const Duration(milliseconds: 240),
-            curve: Curves.easeOutCubic,
-            width: double.infinity,
-            height: availableHeight * _fraction,
-            decoration: BoxDecoration(
-              color: widget.backgroundColor,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(28),
-              ),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onVerticalDragStart: (_) => setState(() => _isDragging = true),
-              onVerticalDragUpdate: (details) =>
-                  _handleDragUpdate(details, availableHeight),
-              onVerticalDragEnd: _handleDragEnd,
-              child: ClipRect(
-                child: OverflowBox(
-                  alignment: Alignment.topCenter,
-                  minHeight: 0,
-                  maxHeight: double.infinity,
-                  child: SizedBox(
-                    width: constraints.maxWidth,
-                    child: widget.child,
-                  ),
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => Navigator.of(context).pop(),
+            child: const SizedBox.expand(),
+          ),
+        ),
+        DraggableScrollableSheet(
+          initialChildSize: 0.58,
+          minChildSize: 0.32,
+          maxChildSize: 0.92,
+          snap: true,
+          snapSizes: const [0.58, 0.92],
+          builder: (context, scrollController) {
+            return DecoratedBox(
+              decoration: BoxDecoration(
+                color: backgroundColor,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(28),
                 ),
               ),
-            ),
-          ),
-        );
-      },
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(28),
+                ),
+                child: builder(scrollController),
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 }
@@ -1107,7 +1065,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         context: context,
         isScrollControlled: true,
         useSafeArea: false,
-        enableDrag: false,
+        enableDrag: true,
         backgroundColor: Colors.transparent,
         builder: (BuildContext context) {
           final mediaQuery = MediaQuery.of(context);
@@ -1164,105 +1122,181 @@ class _SettingsScreenState extends State<SettingsScreen> {
             );
           }
 
-          return _DraggableAboutSheet(
-            backgroundColor: cs.surface,
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(20, 12, 20, 20 + bottomPadding),
-              child: Column(
-                children: [
-                  Container(
-                    width: 42,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: cs.onSurface.withValues(alpha: 0.18),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
+          Widget actionTile({
+            required IconData icon,
+            required String title,
+            required VoidCallback onTap,
+          }) {
+            return Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onTap,
+                borderRadius: BorderRadius.circular(18),
+                child: Ink(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: cs.onSurface.withValues(alpha: 0.045),
+                    borderRadius: BorderRadius.circular(18),
                   ),
-                  const SizedBox(height: 18),
-                  Container(
-                    width: 64,
-                    height: 64,
-                    clipBehavior: Clip.antiAlias,
-                    decoration: BoxDecoration(
-                      color: cs.onSurface.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Image.asset(
-                      'docs/icons/icon.png',
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Мой МПТ',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: cs.onSurface,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Версия $_appVersion',
-                    style: TextStyle(
-                      color: cs.onSurfaceVariant,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Лицензия: GNU GPL V3',
-                    style: TextStyle(
-                      color: cs.onSurfaceVariant,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                  child: Row(
                     children: [
-                      Text(
-                        'Мобильное приложение для студентов и преподавателей Московского приборостроительного техникума.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: cs.onSurfaceVariant,
-                          fontWeight: FontWeight.w600,
-                          height: 1.35,
+                      Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          color: cs.onSurface.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Icon(icon, color: cs.onSurface, size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: TextStyle(
+                            color: cs.onSurface,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 18),
-                      Text(
-                        'Разработчики',
-                        style: TextStyle(
-                          color: cs.onSurface,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      infoTile(
-                        icon: Icons.groups_outlined,
-                        title: 'Студенты группы П50-1-22',
-                        subtitle:
-                            'Себежко Александр Андреевич\nСимернин Матвей Александрович',
-                      ),
-                      const SizedBox(height: 10),
-                      infoTile(
-                        icon: Icons.person_outline,
-                        title: 'Студент группы СА-2-24',
-                        subtitle: 'Посёлов Иван Павлович',
+                      Icon(
+                        Icons.arrow_forward_ios,
+                        size: 16,
+                        color: cs.onSurfaceVariant,
                       ),
                     ],
                   ),
-                ],
+                ),
               ),
-            ),
+            );
+          }
+
+          return _DraggableAboutSheet(
+            backgroundColor: cs.surface,
+            builder: (scrollController) {
+              return SingleChildScrollView(
+                controller: scrollController,
+                physics: const ClampingScrollPhysics(),
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(20, 12, 20, 20 + bottomPadding),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 42,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: cs.onSurface.withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Container(
+                        width: 60,
+                        height: 60,
+                        clipBehavior: Clip.antiAlias,
+                        decoration: BoxDecoration(
+                          color: cs.onSurface.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        child: Image.asset(
+                          'docs/icons/icon.png',
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        'Мой МПТ',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: cs.onSurface,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Версия $_appVersion',
+                        style: TextStyle(
+                          color: cs.onSurfaceVariant,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Лицензия: GNU GPL V3',
+                        style: TextStyle(
+                          color: cs.onSurfaceVariant,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            'Мобильное приложение для студентов и преподавателей Московского приборостроительного техникума.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: cs.onSurfaceVariant,
+                              fontWeight: FontWeight.w600,
+                              height: 1.35,
+                            ),
+                          ),
+                          const SizedBox(height: 18),
+                          Text(
+                            'Разработчики',
+                            style: TextStyle(
+                              color: cs.onSurface,
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          infoTile(
+                            icon: Icons.groups_outlined,
+                            title: 'Студенты группы П50-1-22',
+                            subtitle:
+                                'Себежко Александр Андреевич\nСимернин Матвей Александрович',
+                          ),
+                          const SizedBox(height: 10),
+                          infoTile(
+                            icon: Icons.person_outline,
+                            title: 'Студент группы СА-2-24',
+                            subtitle: 'Посёлов Иван Павлович',
+                          ),
+                          const SizedBox(height: 10),
+                          actionTile(
+                            icon: Icons.privacy_tip_outlined,
+                            title: 'Политика конфиденциальности',
+                            onTap: _openPrivacyPolicy,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
           );
         },
       );
     } finally {
       widget.onModalVisibilityChanged?.call(false);
+    }
+  }
+
+  Future<void> _openPrivacyPolicy() async {
+    final Uri privacyUri = Uri.parse('https://mympt.anixilum.ru/privacy');
+    if (!await launchUrl(privacyUri, mode: LaunchMode.externalApplication)) {
+      if (mounted) {
+        showErrorNotification(
+          context,
+          'Ошибка',
+          'Не удалось открыть политику конфиденциальности',
+          Icons.error_outline,
+        );
+      }
     }
   }
 
