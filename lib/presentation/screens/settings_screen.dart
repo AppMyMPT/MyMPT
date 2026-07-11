@@ -32,54 +32,6 @@ class SettingsScreen extends StatefulWidget {
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _DraggableAboutSheet extends StatelessWidget {
-  final Color backgroundColor;
-  final Widget Function(ScrollController controller) builder;
-
-  const _DraggableAboutSheet({
-    required this.backgroundColor,
-    required this.builder,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Positioned.fill(
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () => Navigator.of(context).pop(),
-            child: const SizedBox.expand(),
-          ),
-        ),
-        DraggableScrollableSheet(
-          initialChildSize: 0.58,
-          minChildSize: 0.32,
-          maxChildSize: 0.92,
-          snap: true,
-          snapSizes: const [0.58, 0.92],
-          builder: (context, scrollController) {
-            return DecoratedBox(
-              decoration: BoxDecoration(
-                color: backgroundColor,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(28),
-                ),
-              ),
-              child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(28),
-                ),
-                child: builder(scrollController),
-              ),
-            );
-          },
-        ),
-      ],
-    );
-  }
-}
-
 class _SettingsScreenState extends State<SettingsScreen> {
   late SpecialtyRepositoryInterface _specialtyRepository;
   late GroupRepositoryInterface _groupRepository;
@@ -914,143 +866,140 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final contentTopPadding = 16.0 + MediaQuery.of(context).padding.top;
+    final mediaQuery = MediaQuery.of(context);
+    final contentTopPadding = 16.0 + mediaQuery.padding.top;
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: SafeArea(
-        top: false,
-        bottom: false,
-        child: SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(16, contentTopPadding, 16, 110),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SettingsHeader(),
-              const SizedBox(height: 28),
-              if (_selectedRole == 'student') ...[
-                _sectionTitle('Учебная группа'),
-                const SizedBox(height: 14),
-                SettingsCard(
-                  title: 'Выберите свою специальность',
-                  subtitle:
-                      _selectedSpecialty?.name ?? 'Специальность не выбрана',
-                  icon: Icons.book_outlined,
-                  onTap: _showSpecialtySelector,
-                ),
-                const SizedBox(height: 14),
-                SettingsCard(
-                  title: 'Выберите свою группу',
-                  subtitle: _selectedGroup?.code ?? 'Группа не выбрана',
-                  icon: Icons.school_outlined,
-                  onTap: _selectedSpecialty != null ? _showGroupSelector : null,
-                ),
-                const SizedBox(height: 14),
-                SettingsCard(
-                  title: 'Сменить версию',
-                  subtitle: 'Изменить версию на преподавателя',
-                  icon: Icons.change_circle_outlined,
-                  onTap: _changeVersion,
-                ),
-              ] else ...[
-                _sectionTitle('Преподаватель'),
-                const SizedBox(height: 14),
-                SettingsCard(
-                  title: 'Выберите преподавателя',
-                  subtitle:
-                      _selectedTeacher?.teacherName ??
-                      'Преподаватель не выбран',
-                  icon: Icons.person_outline,
-                  onTap: _showTeacherSelector,
-                ),
-                const SizedBox(height: 14),
-                SettingsCard(
-                  title: 'Сменить версию',
-                  subtitle: 'Изменить версию на студента',
-                  icon: Icons.change_circle_outlined,
-                  onTap: _changeVersion,
-                ),
-              ],
-              const SizedBox(height: 28),
-              _sectionTitle('Расписание'),
+    return SafeArea(
+      top: false,
+      bottom: false,
+      child: SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(16, contentTopPadding, 16, 7),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SettingsHeader(),
+            const SizedBox(height: 28),
+            if (_selectedRole == 'student') ...[
+              _sectionTitle('Учебная группа'),
               const SizedBox(height: 14),
               SettingsCard(
-                title: _isRefreshing
-                    ? 'Обновление… ${_formatElapsed(_refreshElapsed)}'
-                    : 'Обновить расписание',
-                subtitle: _getLastUpdateText(),
-                icon: Icons.refresh,
-                onTap: _refreshSchedule,
-                isRefreshing: _isRefreshing,
+                title: 'Выберите свою специальность',
+                subtitle:
+                    _selectedSpecialty?.name ?? 'Специальность не выбрана',
+                icon: Icons.book_outlined,
+                onTap: _showSpecialtySelector,
               ),
-              const SizedBox(height: 28),
-              _sectionTitle('Оформление'),
               const SizedBox(height: 14),
               SettingsCard(
-                title: 'Тема оформления',
-                subtitle: _themeLabel(_themeMode),
-                icon: Icons.brightness_6_outlined,
-                onTap: _showThemeSelector,
+                title: 'Выберите свою группу',
+                subtitle: _selectedGroup?.code ?? 'Группа не выбрана',
+                icon: Icons.school_outlined,
+                onTap: _selectedSpecialty != null ? _showGroupSelector : null,
               ),
-              if (kDebugMode) ...[
-                const SizedBox(height: 28),
-                _sectionTitle('Уведомления (Тест)'),
-                const SizedBox(height: 14),
-                SettingsCard(
-                  title: 'Отправить локальное уведомление',
-                  subtitle: 'Проверка работы на самом устройстве',
-                  icon: Icons.notifications_active_outlined,
-                  onTap: _testLocalNotification,
-                ),
-                const SizedBox(height: 14),
-                SettingsCard(
-                  title: 'Скопировать FCM Токен',
-                  subtitle: 'Для теста пушей через Firebase Console',
-                  icon: Icons.cloud_download_outlined,
-                  onTap: _copyFcmToken,
-                ),
-              ],
-              const SizedBox(height: 28),
-              _sectionTitle('Обратная связь'),
               const SizedBox(height: 14),
               SettingsCard(
-                title: 'Связаться с разработчиком',
-                subtitle: 'Сообщить об ошибке или предложить улучшение',
-                icon: Icons.chat_outlined,
-                onTap: _openSupportLink,
+                title: 'Сменить версию',
+                subtitle: 'Изменить версию на преподавателя',
+                icon: Icons.change_circle_outlined,
+                onTap: _changeVersion,
               ),
-              const SizedBox(height: 28),
-              _sectionTitle('Дополнительно'),
+            ] else ...[
+              _sectionTitle('Преподаватель'),
               const SizedBox(height: 14),
-              GestureDetector(
-                onTap: () {
-                  _triggerHaptic();
-                  _showAboutDialog();
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: cs.surface,
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: ListTile(
-                    leading: Icon(Icons.info_outline, color: cs.onSurface),
-                    title: Text(
-                      'О приложении',
-                      style: TextStyle(
-                        color: cs.onSurface,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    trailing: Icon(
-                      Icons.arrow_forward_ios,
-                      size: 16,
-                      color: cs.onSurfaceVariant,
-                    ),
-                  ),
-                ),
+              SettingsCard(
+                title: 'Выберите преподавателя',
+                subtitle:
+                    _selectedTeacher?.teacherName ?? 'Преподаватель не выбран',
+                icon: Icons.person_outline,
+                onTap: _showTeacherSelector,
+              ),
+              const SizedBox(height: 14),
+              SettingsCard(
+                title: 'Сменить версию',
+                subtitle: 'Изменить версию на студента',
+                icon: Icons.change_circle_outlined,
+                onTap: _changeVersion,
               ),
             ],
-          ),
+            const SizedBox(height: 28),
+            _sectionTitle('Расписание'),
+            const SizedBox(height: 14),
+            SettingsCard(
+              title: _isRefreshing
+                  ? 'Обновление… ${_formatElapsed(_refreshElapsed)}'
+                  : 'Обновить расписание',
+              subtitle: _getLastUpdateText(),
+              icon: Icons.refresh,
+              onTap: _refreshSchedule,
+              isRefreshing: _isRefreshing,
+            ),
+            const SizedBox(height: 28),
+            _sectionTitle('Оформление'),
+            const SizedBox(height: 14),
+            SettingsCard(
+              title: 'Тема оформления',
+              subtitle: _themeLabel(_themeMode),
+              icon: Icons.brightness_6_outlined,
+              onTap: _showThemeSelector,
+            ),
+            if (kDebugMode) ...[
+              const SizedBox(height: 28),
+              _sectionTitle('Уведомления (Тест)'),
+              const SizedBox(height: 14),
+              SettingsCard(
+                title: 'Отправить локальное уведомление',
+                subtitle: 'Проверка работы на самом устройстве',
+                icon: Icons.notifications_active_outlined,
+                onTap: _testLocalNotification,
+              ),
+              const SizedBox(height: 14),
+              SettingsCard(
+                title: 'Скопировать FCM Токен',
+                subtitle: 'Для теста пушей через Firebase Console',
+                icon: Icons.cloud_download_outlined,
+                onTap: _copyFcmToken,
+              ),
+            ],
+            const SizedBox(height: 28),
+            _sectionTitle('Обратная связь'),
+            const SizedBox(height: 14),
+            SettingsCard(
+              title: 'Связаться с разработчиком',
+              subtitle: 'Сообщить об ошибке или предложить улучшение',
+              icon: Icons.chat_outlined,
+              onTap: _openSupportLink,
+            ),
+            const SizedBox(height: 28),
+            _sectionTitle('Дополнительно'),
+            const SizedBox(height: 14),
+            GestureDetector(
+              onTap: () {
+                _triggerHaptic();
+                _showAboutDialog();
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                  color: cs.surface,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: ListTile(
+                  leading: Icon(Icons.info_outline, color: cs.onSurface),
+                  title: Text(
+                    'О приложении',
+                    style: TextStyle(
+                      color: cs.onSurface,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  trailing: Icon(
+                    Icons.arrow_forward_ios,
+                    size: 16,
+                    color: cs.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -1077,19 +1026,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
             required String subtitle,
           }) {
             return Container(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: cs.onSurface.withValues(alpha: 0.045),
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(16),
               ),
               child: Row(
                 children: [
                   Container(
-                    width: 38,
-                    height: 38,
+                    width: 36,
+                    height: 36,
                     decoration: BoxDecoration(
                       color: cs.onSurface.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(icon, color: cs.onSurface, size: 20),
                   ),
@@ -1131,21 +1080,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
               color: Colors.transparent,
               child: InkWell(
                 onTap: onTap,
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(16),
                 child: Ink(
-                  padding: const EdgeInsets.all(14),
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: cs.onSurface.withValues(alpha: 0.045),
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                   child: Row(
                     children: [
                       Container(
-                        width: 38,
-                        height: 38,
+                        width: 36,
+                        height: 36,
                         decoration: BoxDecoration(
                           color: cs.onSurface.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(icon, color: cs.onSurface, size: 20),
                       ),
@@ -1171,14 +1120,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
             );
           }
 
-          return _DraggableAboutSheet(
-            backgroundColor: cs.surface,
-            builder: (scrollController) {
-              return SingleChildScrollView(
-                controller: scrollController,
+          return ConstrainedBox(
+            // Let the sheet use its intrinsic content height. On compact
+            // screens the same content becomes scrollable instead of being
+            // clipped below a fixed 58%/92% sheet size.
+            constraints: BoxConstraints(
+              maxHeight: mediaQuery.size.height - mediaQuery.padding.top,
+            ),
+            child: Material(
+              color: cs.surface,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(28),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: SingleChildScrollView(
                 physics: const ClampingScrollPhysics(),
                 child: Padding(
-                  padding: EdgeInsets.fromLTRB(20, 12, 20, 20 + bottomPadding),
+                  padding: EdgeInsets.fromLTRB(20, 10, 20, 16 + bottomPadding),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -1190,82 +1148,77 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      Container(
-                        width: 60,
-                        height: 60,
-                        clipBehavior: Clip.antiAlias,
-                        decoration: BoxDecoration(
-                          color: cs.onSurface.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                        child: Image.asset(
-                          'docs/icons/icon.png',
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        'Мой МПТ',
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: cs.onSurface,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Версия $_appVersion',
-                        style: TextStyle(
-                          color: cs.onSurfaceVariant,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Лицензия: GNU GPL V3',
-                        style: TextStyle(
-                          color: cs.onSurfaceVariant,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 13,
+                      const SizedBox(height: 14),
+                      SizedBox(
+                        width: double.infinity,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Мой МПТ',
+                              style: Theme.of(context).textTheme.titleLarge
+                                  ?.copyWith(
+                                    color: cs.onSurface,
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Версия $_appVersion',
+                              style: TextStyle(
+                                color: cs.onSurfaceVariant,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Лицензия: GNU GPL V3',
+                              style: TextStyle(
+                                color: cs.onSurfaceVariant,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Text(
                             'Мобильное приложение для студентов и преподавателей Московского приборостроительного техникума.',
-                            textAlign: TextAlign.center,
+                            textAlign: TextAlign.left,
                             style: TextStyle(
                               color: cs.onSurfaceVariant,
                               fontWeight: FontWeight.w600,
                               height: 1.35,
                             ),
                           ),
-                          const SizedBox(height: 18),
+                          const SizedBox(height: 14),
                           Text(
                             'Разработчики',
                             style: TextStyle(
                               color: cs.onSurface,
-                              fontSize: 17,
+                              fontSize: 16,
                               fontWeight: FontWeight.w800,
                             ),
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 8),
                           infoTile(
                             icon: Icons.groups_outlined,
                             title: 'Студенты группы П50-1-22',
                             subtitle:
                                 'Себежко Александр Андреевич\nСимернин Матвей Александрович',
                           ),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 8),
                           infoTile(
                             icon: Icons.person_outline,
                             title: 'Студент группы СА-2-24',
                             subtitle: 'Посёлов Иван Павлович',
                           ),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 8),
                           actionTile(
                             icon: Icons.privacy_tip_outlined,
                             title: 'Политика конфиденциальности',
@@ -1276,8 +1229,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ],
                   ),
                 ),
-              );
-            },
+              ),
+            ),
           );
         },
       );

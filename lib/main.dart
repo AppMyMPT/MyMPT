@@ -71,6 +71,7 @@ class MyApp extends StatelessWidget {
         surface: Color(0xFF111111),
       ),
       textTheme: ThemeData.dark().textTheme.apply(
+        fontFamily: 'Roboto',
         bodyColor: Colors.white,
         displayColor: Colors.white,
       ),
@@ -126,6 +127,7 @@ class MyApp extends StatelessWidget {
       ), // Сопоставляем 0xFF000000 из темной с 0xFFFFFFFF в светлой
       colorScheme: cs,
       textTheme: ThemeData.light().textTheme.apply(
+        fontFamily: 'Roboto',
         bodyColor: Colors.black87,
         displayColor: Colors.black87,
       ),
@@ -159,6 +161,18 @@ class MyApp extends StatelessWidget {
           theme: light,
           darkTheme: dark,
           themeMode: mode,
+          builder: (context, child) {
+            // Keep the app typography deterministic when the OS has a custom
+            // font configured. Text styles still inherit the Roboto family
+            // from the active theme, including Cupertino widgets.
+            final mediaQuery = MediaQuery.of(context);
+            return MediaQuery(
+              data: mediaQuery.copyWith(
+                textScaler: const TextScaler.linear(1.0),
+              ),
+              child: child ?? const SizedBox.shrink(),
+            );
+          },
           home: const MainScreen(),
         );
       },
@@ -490,7 +504,9 @@ class _MainScreenState extends State<MainScreen> {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
       child: Scaffold(
-        extendBody: true,
+        // Content screens keep their overlay layout. Settings is page 4 and
+        // must end above the navigation bar so it only needs a small gap.
+        extendBody: _currentIndex != 4,
         body: Stack(
           children: [
             PageView(
