@@ -1021,21 +1021,24 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                   style: TextStyle(color: cs.onSurfaceVariant),
                                 ),
                               )
-                            : ListView.builder(
-                                itemCount: filteredTeachers.length,
-                                itemBuilder: (context, index) {
-                                  final teacher = filteredTeachers[index];
-                                  return ListTile(
-                                    title: Text(teacher.teacherName),
-                                    onTap: () {
-                                      _triggerHaptic();
-                                      setState(() {
-                                        _selectedTeacher = teacher;
-                                      });
-                                      Navigator.pop(context);
-                                    },
-                                  );
-                                },
+                            : Material(
+                                color: Colors.transparent,
+                                child: ListView.builder(
+                                  itemCount: filteredTeachers.length,
+                                  itemBuilder: (context, index) {
+                                    final teacher = filteredTeachers[index];
+                                    return ListTile(
+                                      title: Text(teacher.teacherName),
+                                      onTap: () {
+                                        _triggerHaptic();
+                                        setState(() {
+                                          _selectedTeacher = teacher;
+                                        });
+                                        Navigator.pop(context);
+                                      },
+                                    );
+                                  },
+                                ),
                               ),
                   ),
                 ],
@@ -1092,21 +1095,24 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     ? Center(
                         child: CircularProgressIndicator(color: cs.onSurface),
                       )
-                    : ListView.builder(
-                        itemCount: _specialties.length,
-                        itemBuilder: (context, index) {
-                          final specialty = _specialties[index];
-                          return ListTile(
-                            title: Text(specialty.name),
-                            onTap: () {
-                              _triggerHaptic();
-                              setState(() {
-                                _selectedSpecialty = specialty;
-                              });
-                              Navigator.pop(context);
-                            },
-                          );
-                        },
+                    : Material(
+                        color: Colors.transparent,
+                        child: ListView.builder(
+                          itemCount: _specialties.length,
+                          itemBuilder: (context, index) {
+                            final specialty = _specialties[index];
+                            return ListTile(
+                              title: Text(specialty.name),
+                              onTap: () {
+                                _triggerHaptic();
+                                setState(() {
+                                  _selectedSpecialty = specialty;
+                                });
+                                Navigator.pop(context);
+                              },
+                            );
+                          },
+                        ),
                       ),
               ),
             ],
@@ -1162,21 +1168,24 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                               style: TextStyle(color: cs.onSurfaceVariant),
                             ),
                           )
-                        : ListView.builder(
-                            itemCount: _groups.length,
-                            itemBuilder: (context, index) {
-                              final group = _groups[index];
-                              return ListTile(
-                                title: Text(group.code),
-                                onTap: () {
-                                  _triggerHaptic();
-                                  setState(() {
-                                    _selectedGroup = group;
-                                  });
-                                  Navigator.pop(context);
-                                },
-                              );
-                            },
+                        : Material(
+                            color: Colors.transparent,
+                            child: ListView.builder(
+                              itemCount: _groups.length,
+                              itemBuilder: (context, index) {
+                                final group = _groups[index];
+                                return ListTile(
+                                  title: Text(group.code),
+                                  onTap: () {
+                                    _triggerHaptic();
+                                    setState(() {
+                                      _selectedGroup = group;
+                                    });
+                                    Navigator.pop(context);
+                                  },
+                                );
+                              },
+                            ),
                           ),
               ),
             ],

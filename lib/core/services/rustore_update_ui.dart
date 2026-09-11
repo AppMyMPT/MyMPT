@@ -1,16 +1,16 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_rustore_update/flutter_rustore_update.dart';
-import 'package:flutter_rustore_update/const.dart';
 
 class RuStoreUpdateUi {
   static bool _started = false;
-  static bool _listenerStarted = false;
+  static StreamSubscription<RequestResponse>? _updateSubscription;
 
   /// Полный in-app update flow с UI RuStore:
   /// - info()
   /// - если доступно: download() (UI RuStore)
-  /// - слушаем listener(); когда DOWNLOADED -> completeUpdateFlexible() (UI RuStore)
+  /// - слушаем stateStream; когда DOWNLOADED -> completeUpdateFlexible() (UI RuStore)
   static Future<void> checkAndRunDeferredUpdate() async {
     if (!Platform.isAndroid) return;
     if (_started) return;
@@ -19,9 +19,8 @@ class RuStoreUpdateUi {
     try {
       final info = await RustoreUpdateClient.info();
 
-      // ВАЖНО: в SDK константа именно UPDATE_AILABILITY_AVAILABLE
       final updateAvailable =
-          info.updateAvailability == UPDATE_AILABILITY_AVAILABLE;
+          info.updateAvailability == UPDATE_AVAILABILITY_AVAILABLE;
 
       if (!updateAvailable) return;
 
@@ -41,17 +40,15 @@ class RuStoreUpdateUi {
   }
 
   static void _ensureListener() {
-    if (_listenerStarted) return;
-    _listenerStarted = true;
+    if (_updateSubscription != null) return;
 
-    // listener() нужен, чтобы поймать INSTALL_STATUS_DOWNLOADED
-    RustoreUpdateClient.listener((value) async {
+    _updateSubscription = RustoreUpdateClient.stateStream.listen((value) async {
       try {
         if (value.installStatus == INSTALL_STATUS_DOWNLOADED) {
           // Установка обновления с UI RuStore
           await RustoreUpdateClient.completeUpdateFlexible();
         }
       } catch (_) {}
-    });
+    }, onError: (_) {});
   }
 }

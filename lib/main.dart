@@ -14,6 +14,7 @@ import 'package:my_mpt/core/services/fcm_firestore_service.dart';
 import 'package:my_mpt/core/services/notification_service.dart';
 import 'package:my_mpt/core/services/app_update_ui.dart';
 import 'package:my_mpt/core/services/app_theme_service.dart';
+import 'package:my_mpt/core/services/teacher_full_name_service.dart';
 import 'package:my_mpt/core/utils/date_formatter.dart';
 
 import 'package:my_mpt/presentation/screens/calls_screen.dart';
@@ -43,6 +44,7 @@ Future<void> main() async {
       }
 
       await AppThemeService.init();
+      await TeacherFullNameService.instance.initialize();
 
       runApp(const MyApp());
     },

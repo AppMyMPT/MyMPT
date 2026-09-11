@@ -311,45 +311,48 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
               Expanded(
-                child: ListView(
-                  children: [
-                    RadioListTile<ThemeMode>(
-                      value: ThemeMode.system,
-                      groupValue: _themeMode,
-                      activeColor: Colors.grey,
-                      onChanged: (v) async {
-                        _triggerHaptic();
-                        if (v == null) return;
-                        await AppThemeService.setThemeMode(v);
-                        if (context.mounted) Navigator.pop(context);
-                      },
-                      title: const Text('Системная'),
-                    ),
-                    RadioListTile<ThemeMode>(
-                      value: ThemeMode.light,
-                      groupValue: _themeMode,
-                      activeColor: Colors.grey,
-                      onChanged: (v) async {
-                        _triggerHaptic();
-                        if (v == null) return;
-                        await AppThemeService.setThemeMode(v);
-                        if (context.mounted) Navigator.pop(context);
-                      },
-                      title: const Text('Светлая'),
-                    ),
-                    RadioListTile<ThemeMode>(
-                      value: ThemeMode.dark,
-                      groupValue: _themeMode,
-                      activeColor: Colors.grey,
-                      onChanged: (v) async {
-                        _triggerHaptic();
-                        if (v == null) return;
-                        await AppThemeService.setThemeMode(v);
-                        if (context.mounted) Navigator.pop(context);
-                      },
-                      title: const Text('Тёмная'),
-                    ),
-                  ],
+                child: Material(
+                  color: Colors.transparent,
+                  child: ListView(
+                    children: [
+                      RadioListTile<ThemeMode>(
+                        value: ThemeMode.system,
+                        groupValue: _themeMode,
+                        activeColor: Colors.grey,
+                        onChanged: (v) async {
+                          _triggerHaptic();
+                          if (v == null) return;
+                          await AppThemeService.setThemeMode(v);
+                          if (context.mounted) Navigator.pop(context);
+                        },
+                        title: const Text('Системная'),
+                      ),
+                      RadioListTile<ThemeMode>(
+                        value: ThemeMode.light,
+                        groupValue: _themeMode,
+                        activeColor: Colors.grey,
+                        onChanged: (v) async {
+                          _triggerHaptic();
+                          if (v == null) return;
+                          await AppThemeService.setThemeMode(v);
+                          if (context.mounted) Navigator.pop(context);
+                        },
+                        title: const Text('Светлая'),
+                      ),
+                      RadioListTile<ThemeMode>(
+                        value: ThemeMode.dark,
+                        groupValue: _themeMode,
+                        activeColor: Colors.grey,
+                        onChanged: (v) async {
+                          _triggerHaptic();
+                          if (v == null) return;
+                          await AppThemeService.setThemeMode(v);
+                          if (context.mounted) Navigator.pop(context);
+                        },
+                        title: const Text('Тёмная'),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -977,11 +980,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _triggerHaptic();
                 _showAboutDialog();
               },
-              child: Container(
-                decoration: BoxDecoration(
-                  color: cs.surface,
-                  borderRadius: BorderRadius.circular(24),
-                ),
+              child: Material(
+                color: cs.surface,
+                borderRadius: BorderRadius.circular(24),
+                clipBehavior: Clip.antiAlias,
                 child: ListTile(
                   leading: Icon(Icons.info_outline, color: cs.onSurface),
                   title: Text(
@@ -1304,19 +1306,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ? Center(
                         child: CircularProgressIndicator(color: cs.onSurface),
                       )
-                    : ListView.builder(
-                        itemCount: _specialties.length,
-                        itemBuilder: (context, index) {
-                          final specialty = _specialties[index];
-                          return ListTile(
-                            title: Text(specialty.name),
-                            onTap: () {
-                              _triggerHaptic();
-                              Navigator.pop(context);
-                              _onSpecialtySelected(specialty);
-                            },
-                          );
-                        },
+                    : Material(
+                        color: Colors.transparent,
+                        child: ListView.builder(
+                          itemCount: _specialties.length,
+                          itemBuilder: (context, index) {
+                            final specialty = _specialties[index];
+                            return ListTile(
+                              title: Text(specialty.name),
+                              onTap: () {
+                                _triggerHaptic();
+                                Navigator.pop(context);
+                                _onSpecialtySelected(specialty);
+                              },
+                            );
+                          },
+                        ),
                       ),
               ),
             ],
@@ -1371,19 +1376,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           style: TextStyle(color: cs.onSurfaceVariant),
                         ),
                       )
-                    : ListView.builder(
-                        itemCount: _groups.length,
-                        itemBuilder: (context, index) {
-                          final group = _groups[index];
-                          return ListTile(
-                            title: Text(group.code),
-                            onTap: () {
-                              _triggerHaptic();
-                              Navigator.pop(context);
-                              _onGroupSelected(group);
-                            },
-                          );
-                        },
+                    : Material(
+                        color: Colors.transparent,
+                        child: ListView.builder(
+                          itemCount: _groups.length,
+                          itemBuilder: (context, index) {
+                            final group = _groups[index];
+                            return ListTile(
+                              title: Text(group.code),
+                              onTap: () {
+                                _triggerHaptic();
+                                Navigator.pop(context);
+                                _onGroupSelected(group);
+                              },
+                            );
+                          },
+                        ),
                       ),
               ),
             ],
@@ -1560,19 +1568,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     ),
                                   ),
                                 )
-                              : ListView.builder(
-                                  itemCount: filteredTeachers.length,
-                                  itemBuilder: (context, index) {
-                                    final teacher = filteredTeachers[index];
-                                    return ListTile(
-                                      title: Text(teacher.teacherName),
-                                      onTap: () {
-                                        _triggerHaptic();
-                                        Navigator.pop(context);
-                                        _onTeacherSelected(teacher);
-                                      },
-                                    );
-                                  },
+                              : Material(
+                                  color: Colors.transparent,
+                                  child: ListView.builder(
+                                    itemCount: filteredTeachers.length,
+                                    itemBuilder: (context, index) {
+                                      final teacher = filteredTeachers[index];
+                                      return ListTile(
+                                        title: Text(teacher.teacherName),
+                                        onTap: () {
+                                          _triggerHaptic();
+                                          Navigator.pop(context);
+                                          _onTeacherSelected(teacher);
+                                        },
+                                      );
+                                    },
+                                  ),
                                 ),
                         ),
                       ],

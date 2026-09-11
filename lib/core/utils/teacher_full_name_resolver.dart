@@ -1,8 +1,7 @@
-/// Список преподавателей МПТ с полным ФИО и сопоставление по инициалам и фамилии.
-/// Используется для отображения полного ФИО в окне детали пары.
-/// Иформация взята из открытого источника: https://www.rea.ru/structure/kolledji-i-tehnikum/moskovskiy-priborostroitelnyiy-tehnikum
+// Резервный список преподавателей МПТ с полным ФИО.
+// Источник: https://www.rea.ru/structure/kolledji-i-tehnikum/moskovskiy-priborostroitelnyiy-tehnikum
 
-const List<String> _teachersFullNames = [
+const List<String> _fallbackTeacherFullNames = [
   'Чурилов Андрей Викторович',
   'Яковлев Вячеслав Семенович',
   'Клопов Дмитрий Анатольевич',
@@ -223,13 +222,28 @@ Map<String, String>? _fullNameByKey;
 Map<String, String> get _fullNameMap {
   _fullNameByKey ??= () {
     final map = <String, String>{};
-    for (final full in _teachersFullNames) {
+    for (final full in _fallbackTeacherFullNames) {
       final key = _keyFromFullName(full);
       map[key] = full;
     }
     return map;
   }();
   return _fullNameByKey!;
+}
+
+/// Atomically replaces the in-memory index after a validated cache refresh.
+/// The bundled list remains the fallback until this function is called.
+void updateTeacherFullNameIndex(Iterable<String> fullNames) {
+  final map = <String, String>{};
+  for (final full in _fallbackTeacherFullNames) {
+    map[_keyFromFullName(full)] = full;
+  }
+  for (final full in fullNames) {
+    final normalized = full.replaceAll(RegExp(r'\s+'), ' ').trim();
+    if (normalized.isEmpty) continue;
+    map[_keyFromFullName(normalized)] = normalized;
+  }
+  if (map.isNotEmpty) _fullNameByKey = map;
 }
 
 /// Возвращает полное ФИО одного преподавателя по короткой подписи.
