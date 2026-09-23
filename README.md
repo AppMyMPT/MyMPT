@@ -51,7 +51,7 @@ APK-релизы можно скачать с GitHub -[<img align="center" heigh
 
 Канал с новостями в Telegram - [посмотреть](https://t.me/merrcurys_software).
 
-Техническая поддержка приложения в Telegram - [обратиться](https://t.me/SeacardSupportBot).
+Техническая поддержка приложения в Telegram - [обратиться](https://t.me/MptSupportBot).
 
 ## Стек технологий
 
