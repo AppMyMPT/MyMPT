@@ -58,6 +58,10 @@ APK-релизы можно скачать с GitHub -[<img align="center" heigh
 - Язык программирования: Dart
 - Фреймворк: Flutter
 
+## Архивный репозиторий
+
+Старый репозиторий проекта находится здесь - [Merrcurys/MyMPT ](https://github.com/Merrcurys/MyMPT)
+
 ## Разработчики
 
 - [Посёлов Иван Павлович](https://github.com/Ivan3310) из группы СА-2-24
@@ -66,9 +70,21 @@ APK-релизы можно скачать с GitHub -[<img align="center" heigh
 - [Себежко Александр Андреевич](https://github.com/merrcurys) из группы П50-1-22
 - [Симернин Матвей Александрович](https://github.com/E-eclipse) из группы П50-1-22
 
-## Архивный репозиторий
+## Участники проекта
 
-Старый репозиторий проекта находится здесь - [Merrcurys/MyMPT ](https://github.com/Merrcurys/MyMPT)
+<a href="https://github.com/AppMyMPT/MyMPT/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=AppMyMPT/MyMPT&max=300&columns=15" />
+</a>
+
+## История популярности проекта
+
+<a href="https://star-history.com/#AppMyMPT/MyMPT&Date">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=AppMyMPT/MyMPT&type=Date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=AppMyMPT/MyMPT&type=Date" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=AppMyMPT/MyMPT&type=Date" />
+ </picture>
+</a>
 
 ## Лицензия
 
