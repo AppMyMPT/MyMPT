@@ -63,7 +63,7 @@ class _SettingsCardState extends State<SettingsCard> with SingleTickerProviderSt
     final isDark = theme.brightness == Brightness.dark;
 
     final bg = cs.surface;
-    final iconBg = isDark ? Colors.white.withOpacity(0.10) : Colors.black.withOpacity(0.06);
+    final iconBg = isDark ? Colors.white.withValues(alpha: 0.10) : Colors.black.withValues(alpha: 0.06);
     final iconColor = isDark ? Colors.white : Colors.black87;
 
     final titleStyle = theme.textTheme.titleMedium?.copyWith(
@@ -74,8 +74,8 @@ class _SettingsCardState extends State<SettingsCard> with SingleTickerProviderSt
       color: isDark ? Colors.white70 : cs.onSurfaceVariant,
     );
 
-    final chevronColor = isDark ? Colors.white54 : cs.onSurfaceVariant.withOpacity(0.8);
-    final progressColor = isDark ? Colors.white : cs.onSurface.withOpacity(0.7);
+    final chevronColor = isDark ? Colors.white54 : cs.onSurfaceVariant.withValues(alpha: 0.8);
+    final progressColor = isDark ? Colors.white : cs.onSurface.withValues(alpha: 0.7);
 
     return Material(
       color: Colors.transparent,

@@ -932,7 +932,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     height: 4,
                     width: 40,
                     decoration: BoxDecoration(
-                      color: cs.onSurface.withOpacity(0.2),
+                      color: cs.onSurface.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -1076,7 +1076,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 height: 4,
                 width: 40,
                 decoration: BoxDecoration(
-                  color: cs.onSurface.withOpacity(0.2),
+                  color: cs.onSurface.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -1142,7 +1142,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 height: 4,
                 width: 40,
                 decoration: BoxDecoration(
-                  color: cs.onSurface.withOpacity(0.2),
+                  color: cs.onSurface.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),

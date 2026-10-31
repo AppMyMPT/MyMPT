@@ -139,7 +139,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       setState(() {
         _appVersion = info.version;
       });
-    } catch (e) {}
+    } catch (_) {
+      // Версия приложения не критична для работы экрана.
+    }
   }
 
   Future<void> _loadSpecialties() async {
@@ -228,7 +230,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           }
         }
       });
-    } catch (e) {}
+    } catch (_) {
+      // Сохранённые предпочтения не критичны при старте экрана.
+    }
   }
 
   String _getLastUpdateText() {
@@ -250,8 +254,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (hours % 10 == 1 && hours % 100 != 11) return 'час';
     if (hours % 10 >= 2 &&
         hours % 10 <= 4 &&
-        (hours % 100 < 10 || hours % 100 >= 20))
+        (hours % 100 < 10 || hours % 100 >= 20)) {
       return 'часа';
+    }
     return 'часов';
   }
 
@@ -259,8 +264,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (minutes % 10 == 1 && minutes % 100 != 11) return 'минуту';
     if (minutes % 10 >= 2 &&
         minutes % 10 <= 4 &&
-        (minutes % 100 < 10 || minutes % 100 >= 20))
+        (minutes % 100 < 10 || minutes % 100 >= 20)) {
       return 'минуты';
+    }
     return 'минут';
   }
 
@@ -272,8 +278,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         return 'Светлая';
       case ThemeMode.dark:
         return 'Тёмная';
-      default:
-        return 'Системная';
     }
   }
 
@@ -297,7 +301,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 height: 4,
                 width: 40,
                 decoration: BoxDecoration(
-                  color: cs.onSurface.withOpacity(0.2),
+                  color: cs.onSurface.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -313,45 +317,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Expanded(
                 child: Material(
                   color: Colors.transparent,
-                  child: ListView(
-                    children: [
-                      RadioListTile<ThemeMode>(
-                        value: ThemeMode.system,
-                        groupValue: _themeMode,
-                        activeColor: Colors.grey,
-                        onChanged: (v) async {
-                          _triggerHaptic();
-                          if (v == null) return;
-                          await AppThemeService.setThemeMode(v);
-                          if (context.mounted) Navigator.pop(context);
-                        },
-                        title: const Text('Системная'),
-                      ),
-                      RadioListTile<ThemeMode>(
-                        value: ThemeMode.light,
-                        groupValue: _themeMode,
-                        activeColor: Colors.grey,
-                        onChanged: (v) async {
-                          _triggerHaptic();
-                          if (v == null) return;
-                          await AppThemeService.setThemeMode(v);
-                          if (context.mounted) Navigator.pop(context);
-                        },
-                        title: const Text('Светлая'),
-                      ),
-                      RadioListTile<ThemeMode>(
-                        value: ThemeMode.dark,
-                        groupValue: _themeMode,
-                        activeColor: Colors.grey,
-                        onChanged: (v) async {
-                          _triggerHaptic();
-                          if (v == null) return;
-                          await AppThemeService.setThemeMode(v);
-                          if (context.mounted) Navigator.pop(context);
-                        },
-                        title: const Text('Тёмная'),
-                      ),
-                    ],
+                  child: RadioGroup<ThemeMode>(
+                    groupValue: _themeMode,
+                    onChanged: (v) async {
+                      _triggerHaptic();
+                      if (v == null) return;
+                      await AppThemeService.setThemeMode(v);
+                      if (context.mounted) Navigator.pop(context);
+                    },
+                    child: ListView(
+                      children: [
+                        RadioListTile<ThemeMode>(
+                          value: ThemeMode.system,
+                          activeColor: Colors.grey,
+                          title: const Text('Системная'),
+                        ),
+                        RadioListTile<ThemeMode>(
+                          value: ThemeMode.light,
+                          activeColor: Colors.grey,
+                          title: const Text('Светлая'),
+                        ),
+                        RadioListTile<ThemeMode>(
+                          value: ThemeMode.dark,
+                          activeColor: Colors.grey,
+                          title: const Text('Тёмная'),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -390,25 +382,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (_selectedRole == 'student') {
         final selectedGroupCode = prefs.getString(_selectedGroupKey);
         if (selectedGroupCode == null || selectedGroupCode.isEmpty) {
-          if (mounted)
+          if (mounted) {
             showInfoNotification(
               context,
               'Выберите группу',
               'Сначала выберите специальность и группу',
               Icons.info_outline,
             );
+          }
           return;
         }
       } else {
         final teacherName = prefs.getString(_teacherNameKey);
         if (teacherName == null || teacherName.isEmpty) {
-          if (mounted)
+          if (mounted) {
             showInfoNotification(
               context,
               'Выберите преподавателя',
               'Сначала выберите преподавателя',
               Icons.info_outline,
             );
+          }
           return;
         }
       }
@@ -480,13 +474,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
         }
       }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         showErrorNotification(
           context,
           'Ошибка обновления',
           'Не удалось обновить расписание',
           Icons.error_outline,
         );
+      }
     } finally {
       sw.stop();
       _refreshTimer?.cancel();
@@ -532,13 +527,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
         );
       }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         showErrorNotification(
           context,
           'Ошибка',
           'Не удалось сменить версию',
           Icons.error_outline,
         );
+      }
     }
   }
 
@@ -672,9 +668,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           setState(() => _lastUpdate = _repository.lastUpdate);
         }
 
-        if (ok)
+        if (ok) {
           _repository.dataUpdatedNotifier.value =
               !_repository.dataUpdatedNotifier.value;
+        }
         try {
           await FcmFirestoreService().syncTokenWithGroup();
         } catch (_) {}
@@ -715,22 +712,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
           }
         }
       } catch (_) {
-        if (mounted)
+        if (mounted) {
           showErrorNotification(
             context,
             'Ошибка',
             'Не удалось обновить расписание.',
             Icons.warning,
           );
+        }
       }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         showErrorNotification(
           context,
           'Ошибка',
           'Произошла ошибка при выборе группы.',
           Icons.error_outline,
         );
+      }
     }
   }
 
@@ -746,9 +745,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final ok = await _repository.refreshAllDataWithStatus(
           forceRefresh: true,
         );
-        if (ok)
+        if (ok) {
           _repository.dataUpdatedNotifier.value =
               !_repository.dataUpdatedNotifier.value;
+        }
 
         if (mounted) {
           if (ok) {
@@ -786,22 +786,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
           }
         }
       } catch (_) {
-        if (mounted)
+        if (mounted) {
           showErrorNotification(
             context,
             'Ошибка',
             'Не удалось обновить расписание.',
             Icons.warning,
           );
+        }
       }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         showErrorNotification(
           context,
           'Ошибка',
           'Произошла ошибка при выборе преподавателя.',
           Icons.error_outline,
         );
+      }
     }
   }
 
@@ -1258,13 +1260,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _openSupportLink() async {
     final Uri supportUri = Uri.parse('https://telegram.me/MptSupportBot');
     if (!await launchUrl(supportUri)) {
-      if (mounted)
+      if (mounted) {
         showErrorNotification(
           context,
           'Ошибка',
           'Не удалось открыть ссылку поддержки',
           Icons.error_outline,
         );
+      }
     }
   }
 
@@ -1288,7 +1291,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 height: 4,
                 width: 40,
                 decoration: BoxDecoration(
-                  color: cs.onSurface.withOpacity(0.2),
+                  color: cs.onSurface.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -1351,7 +1354,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 height: 4,
                 width: 40,
                 decoration: BoxDecoration(
-                  color: cs.onSurface.withOpacity(0.2),
+                  color: cs.onSurface.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -1467,7 +1470,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           height: 4,
                           width: 40,
                           decoration: BoxDecoration(
-                            color: cs.onSurface.withOpacity(0.2),
+                            color: cs.onSurface.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(2),
                           ),
                         ),

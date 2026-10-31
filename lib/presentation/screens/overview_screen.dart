@@ -555,7 +555,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
                               Icon(
                                 Icons.weekend_outlined,
                                 size: 64,
-                                color: onSurface.withOpacity(0.30),
+                                color: onSurface.withValues(alpha: 0.30),
                               ),
                               const SizedBox(height: 16),
                               Text(
@@ -563,7 +563,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
                                 style: TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.w600,
-                                  color: onSurface.withOpacity(0.80),
+                                  color: onSurface.withValues(alpha: 0.80),
                                 ),
                               ),
                               const SizedBox(height: 8),
@@ -658,7 +658,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
                       if (filteredChanges.isNotEmpty) ...[
                         const SizedBox(height: 30),
                         Divider(
-                          color: cs.outlineVariant.withOpacity(0.8),
+                          color: cs.outlineVariant.withValues(alpha: 0.8),
                           thickness: 1,
                         ),
                         const SizedBox(height: 20),
@@ -1148,7 +1148,7 @@ class _StaticOverviewHeader extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.30 : 0.10),
+              color: Colors.black.withValues(alpha: isDark ? 0.30 : 0.10),
               blurRadius: 15,
               offset: const Offset(0, 8),
             ),
@@ -1202,7 +1202,7 @@ class _StaticOverviewHeader extends StatelessWidget {
                     child: Icon(
                       statusIcon,
                       size: iconSize,
-                      color: titleColor.withOpacity(0.85),
+                      color: titleColor.withValues(alpha: 0.85),
                     ),
                   ),
                 ),
@@ -1233,11 +1233,11 @@ class _WeekTypePill extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final bg = isDark
-        ? Colors.white.withOpacity(0.10)
-        : Colors.black.withOpacity(0.06);
+        ? Colors.white.withValues(alpha: 0.10)
+        : Colors.black.withValues(alpha: 0.06);
     final border = isDark
-        ? Colors.white.withOpacity(0.12)
-        : Colors.black.withOpacity(0.08);
+        ? Colors.white.withValues(alpha: 0.12)
+        : Colors.black.withValues(alpha: 0.08);
     final fg = isDark ? Colors.white : Colors.black87;
 
     return Container(

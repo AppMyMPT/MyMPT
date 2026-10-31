@@ -29,7 +29,10 @@ class NotificationService {
       requestSoundPermission: true,
     );
     await _notifications.initialize(
-      const InitializationSettings(android: androidSettings, iOS: iosSettings),
+      settings: const InitializationSettings(
+        android: androidSettings,
+        iOS: iosSettings,
+      ),
       onDidReceiveNotificationResponse: _onNotificationTapped,
     );
 
@@ -77,10 +80,10 @@ class NotificationService {
       iOS: iosDetails,
     );
     await _notifications.show(
-      DateTime.now().millisecondsSinceEpoch % 100000,
-      title,
-      body,
-      details,
+      id: DateTime.now().millisecondsSinceEpoch % 100000,
+      title: title,
+      body: body,
+      notificationDetails: details,
     );
   }
 

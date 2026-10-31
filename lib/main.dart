@@ -141,7 +141,7 @@ class MyApp extends StatelessWidget {
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: const Color(0xFFF5F5F5),
-        indicatorColor: Colors.black.withOpacity(0.06),
+        indicatorColor: Colors.black.withValues(alpha: 0.06),
         height: 80,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         elevation: 0,
@@ -463,8 +463,8 @@ class _MainScreenState extends State<MainScreen> {
           data: Theme.of(context).copyWith(
             navigationBarTheme: Theme.of(context).navigationBarTheme.copyWith(
               indicatorColor: isDark
-                  ? activeColor.withOpacity(0.25)
-                  : activeColor.withOpacity(0.15),
+                  ? activeColor.withValues(alpha: 0.25)
+                  : activeColor.withValues(alpha: 0.15),
               iconTheme: WidgetStateProperty.resolveWith(
                 (states) => IconThemeData(
                   color: states.contains(WidgetState.selected)

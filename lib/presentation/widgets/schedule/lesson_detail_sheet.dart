@@ -30,7 +30,7 @@ void showLessonDetailSheet(
   final subtitleColor = isDark ? Colors.white.withValues(alpha: 0.9) : Colors.black87;
   final iconColor = isDark ? Colors.white70 : Colors.black54;
 
-  final buttonBg = isDark ? const Color(0xFF333333) : Colors.black.withOpacity(0.08);
+  final buttonBg = isDark ? const Color(0xFF333333) : Colors.black.withValues(alpha: 0.08);
   final buttonFg = isDark ? Colors.white : Colors.black87;
 
   showModalBottomSheet<void>(
