@@ -87,7 +87,7 @@ flutter run
 Или релизный APK:
 
 ```bash
-flutter build apk --release
+flutter build apk --release --obfuscate --split-debug-info=build/app/outputs/symbols
 ```
 
 Файл: `build/app/outputs/flutter-apk/app-release.apk` (или `app-<abi>-release.apk`).
