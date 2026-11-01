@@ -1,6 +1,6 @@
 # Мой МПТ
 
-**Мой МПТ** — мобильное приложение для студентов Московского приборостроительного техникума им Г.В. Плеханова, позволяющее просматривать расписание занятий, звонки и другую полезную информацию.
+**Мой МПТ** — мобильное приложение для студентов Московского приборостроительного техникума им. Г.В. Плеханова, позволяющее просматривать расписание занятий, звонки и другую полезную информацию.
 
 <p align="center">
       <img src="https://github.com/user-attachments/assets/f16342e8-1f28-444e-bedf-a5cf7feeb167" alt="Project Logo" width="726">
@@ -13,7 +13,7 @@
 - Просмотр расписания на неделю
 - Информация о заменах
 - Уведомления о заменах
-- Информацию о звонках
+- Информация о звонках
 - Расписание для преподавателей
 - Отображение полного ФИО преподавателя
 - Темная и светлая тема
@@ -30,7 +30,7 @@
 
 ## Документация
 
-Документация проекта находится в файле [DOCUMENTATION.md](https://github.com/AppMyMPT/MyMPT/blob/main/docs/DOCUMENTATION.md). Она включает в себя:
+Документация проекта находится в файле [DOCUMENTATION.md](docs/DOCUMENTATION.md). Она включает в себя:
 
 - Архитектуру проекта
 - Описание слоев данных, домена и представления
@@ -39,13 +39,13 @@
 
 ## Установка приложения
 
-Приложение доступно в Google Play -[<img align="center" height="60" alt="Google Play" src="https://github.com/user-attachments/assets/50a231f2-d34d-4a88-a257-925a37bcbd07" />](https://play.google.com/store/apps/details?id=ru.merrcurys.my_mpt)
+Приложение доступно в Google Play - [<img align="center" height="60" alt="Google Play" src="https://github.com/user-attachments/assets/50a231f2-d34d-4a88-a257-925a37bcbd07" />](https://play.google.com/store/apps/details?id=ru.merrcurys.my_mpt)
 
 Приложение доступно в AppStore - [<img align="center" height="55" alt="logo-color-dark" src="https://github.com/user-attachments/assets/586a418c-696b-4e6c-a6f5-e97ef95c76dc" />](https://apps.apple.com/us/app/мой-мпт/id6759071381)
 
-Приложение доступно в RuStore	- [<img align="center" height="45" alt="logo-color-dark" src="https://github.com/user-attachments/assets/bd6014bd-a5c7-4130-bd31-80c8b57e13a2" />](https://www.rustore.ru/catalog/app/ru.merrcurys.my_mpt)
+Приложение доступно в RuStore - [<img align="center" height="45" alt="logo-color-dark" src="https://github.com/user-attachments/assets/bd6014bd-a5c7-4130-bd31-80c8b57e13a2" />](https://www.rustore.ru/catalog/app/ru.merrcurys.my_mpt)
 
-APK-релизы можно скачать с GitHub -[<img align="center" height="60" alt="logo-color-dark" src="https://github.com/user-attachments/assets/1a481370-4323-40e8-94b8-0106b9fc5363" />](https://github.com/AppMyMPT/MyMPT/releases)
+APK-релизы можно скачать с GitHub - [<img align="center" height="60" alt="logo-color-dark" src="https://github.com/user-attachments/assets/1a481370-4323-40e8-94b8-0106b9fc5363" />](https://github.com/AppMyMPT/MyMPT/releases)
 
 ## Поддержка и обсуждение
 
@@ -60,7 +60,7 @@ APK-релизы можно скачать с GitHub -[<img align="center" heigh
 
 ## Архивный репозиторий
 
-Старый репозиторий проекта находится здесь - [Merrcurys/MyMPT ](https://github.com/Merrcurys/MyMPT)
+Старый репозиторий проекта находится здесь - [Merrcurys/MyMPT](https://github.com/Merrcurys/MyMPT)
 
 ## Разработчики
 

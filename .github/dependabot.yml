@@ -36,6 +36,21 @@ updates:
       - "android"
     commit-message:
       prefix: "chore(deps-android)"
+    # Flutter 3.47 supports AGP <= 9.2 and Gradle <= 9.3.1.
+    # Keep major/minor bumps of the build toolchain manual.
+    ignore:
+      - dependency-name: "com.android.application"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
+      - dependency-name: "gradle-wrapper"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
+      - dependency-name: "org.jetbrains.kotlin.android"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
     groups:
       minor-and-patch:
         patterns:

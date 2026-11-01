@@ -58,3 +58,30 @@ firebase-debug.*.log
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Gradle / Xcode build output
+/android/build/
+/ios/build/
+**/.gradle/
+**/.kotlin/
+
+# Packaged artifacts
+*.apk
+*.aab
+*.ipa
+*.hprof
+
+# Local secrets and signing files
+key.properties
+local.properties
+*.jks
+*.keystore
+.env
+.env.*
+
+# OS / editor junk
+Thumbs.db
+desktop.ini
+*.orig
+*.rej
+*~
