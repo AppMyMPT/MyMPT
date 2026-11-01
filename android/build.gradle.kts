@@ -17,6 +17,11 @@ subprojects {
     project.layout.buildDirectory.value(newSubprojectBuildDir)
 }
 subprojects {
+    if (name == "flutter_rustore_update") {
+        pluginManager.apply("org.jetbrains.kotlin.android")
+    }
+}
+subprojects {
     project.evaluationDependsOn(":app")
 }
 
